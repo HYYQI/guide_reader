@@ -202,7 +202,7 @@
 <body>
     <div class="container">
         <header>
-            <h1>哈工大航天馆导游词文本阅读器</h1>
+            <h1>导游词文本阅读器</h1>
             <div class="subtitle">读取并显示 /text 目录下的TXT文档</div>
         </header>
         
@@ -210,19 +210,7 @@
             <label for="fileSelect">选择要阅读的导游词文件：</label>
             <select id="fileSelect">
                 <option value="">请选择文件...</option>
-                <option value="guide_full.txt">完整导游词</option>
-                <option value="guide_part1.txt">第一部分：哈工大历史</option>
-                <option value="guide_part2.txt">第二部分：中国航天梦起源</option>
-                <option value="guide_part3.txt">第三部分：两弹一星与导弹发展</option>
-                <option value="guide_part4.txt">第四部分：东方红一号卫星</option>
-                <option value="guide_part5.txt">第五部分：返回舱与长征火箭</option>
-                <option value="guide_part6.txt">第六部分：嫦娥探月工程</option>
-                <option value="guide_part7.txt">第七部分：神舟系列与航天英雄</option>
-                <option value="guide_part8.txt">第八部分：发动机展厅</option>
-                <option value="guide_part9.txt">第九部分：液体燃料导弹发展</option>
-                <option value="guide_part10.txt">第十部分：中国空间站建设</option>
-                <option value="guide_part11.txt">第十一部分：嫦娥五号与月壤研究</option>
-                <option value="guide_part12.txt">第十二部分：哈工大贡献与航天服</option>
+                <option value="1.txt">完整导游词</option>
             </select>
         </div>
         
@@ -264,7 +252,7 @@
             
             try {
                 // 构建文件路径
-                const filePath = `/text/${filename}`;
+                const filePath = `./text/${filename}`;
                 
                 // 使用fetch API获取文件内容
                 const response = await fetch(filePath);
@@ -296,15 +284,6 @@
             // 处理文本内容，添加一些简单的格式标记
             let formattedText = text;
             
-            // 简单的关键词高亮（可以根据需要调整）
-            formattedText = formattedText.replace(/哈工大/g, '<span class="highlight">哈工大</span>');
-            formattedText = formattedText.replace(/东方红一号/g, '<span class="achievement">东方红一号</span>');
-            formattedText = formattedText.replace(/长征/g, '<span class="tech-term">长征</span>');
-            formattedText = formattedText.replace(/嫦娥/g, '<span class="achievement">嫦娥</span>');
-            formattedText = formattedText.replace(/神舟/g, '<span class="achievement">神舟</span>');
-            formattedText = formattedText.replace(/杨利伟|翟志刚|孙家栋/g, '<span class="name">$&</span>');
-            formattedText = formattedText.replace(/\d{4}年/g, '<span class="date">$&</span>');
-            formattedText = formattedText.replace(/国防七子|两弹一星/g, '<span class="important">$&</span>');
             
             // 将换行符转换为HTML段落
             const paragraphs = formattedText.split(/\n\s*\n/);
