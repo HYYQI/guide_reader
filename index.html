@@ -453,3 +453,417 @@
         });
         
         // 添加触控滑动支持
+        // 添加触控滑动支持
+        let touchStartX = 0;
+        let touchEndX = 0;
+        
+        contentContainer.addEventListener('touchstart', function(event) {
+            touchStartX = event.changedTouches[0].screenX;
+        }, false);
+        
+        contentContainer.addEventListener('touchend', function(event) {
+            touchEndX = event.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+        
+        function handleSwipe() {
+            const swipeThreshold = 50; // 最小滑动距离
+            
+            if (touchEndX < touchStartX - swipeThreshold) {
+                // 向左滑动 - 下一句
+                showNextSentence();
+            } else if (touchEndX > touchStartX + swipeThreshold) {
+                // 向右滑动 - 上一句
+                showPreviousSentence();
+            }
+        }
+        
+        // 初始化应用
+        function initApp() {
+            initFileSelect();
+            
+            // 默认加载第一个文件
+            const firstFileName = Object.keys(textFiles)[0];
+            if (firstFileName) {
+                fileSelect.value = firstFileName;
+                loadFile(firstFileName);
+            }
+            
+            // 隐藏加载状态
+            loadingElement.style.display = 'none';
+        }
+        
+        // 页面加载完成后初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // 添加朗读功能
+        const speakBtn = document.createElement('button');
+        speakBtn.className = 'btn btn-primary';
+        speakBtn.id = 'speakBtn';
+        speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读';
+        
+        // 将朗读按钮添加到控制区域
+        const controls = document.querySelector('.controls');
+        controls.insertBefore(speakBtn, nextBtn);
+        
+        // 朗读功能
+        speakBtn.addEventListener('click', function() {
+            if (!currentSentences.length || currentIndex >= currentSentences.length) return;
+            
+            const utterance = new SpeechSynthesisUtterance(currentSentences[currentIndex]);
+            utterance.lang = 'zh-CN';
+            utterance.rate = 0.9;
+            
+            // 切换按钮状态
+            if (speechSynthesis.speaking) {
+                speechSynthesis.cancel();
+                speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读';
+            } else {
+                speechSynthesis.speak(utterance);
+                speakBtn.innerHTML = '<i class="fas fa-stop"></i> 停止';
+                
+                utterance.onend = function() {
+                    speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> 朗读';
+                };
+            }
+        });
+        
+        // 添加自动播放模式
+        const autoPlayBtn = document.createElement('button');
+        autoPlayBtn.className = 'btn btn-secondary';
+        autoPlayBtn.id = 'autoPlayBtn';
+        autoPlayBtn.innerHTML = '<i class="fas fa-play"></i> 自动播放';
+        
+        // 将自动播放按钮添加到控制区域
+        controls.insertBefore(autoPlayBtn, prevBtn);
+        
+        let autoPlayInterval = null;
+        
+        autoPlayBtn.addEventListener('click', function() {
+            if (autoPlayInterval) {
+                // 停止自动播放
+                clearInterval(autoPlayInterval);
+                autoPlayInterval = null;
+                autoPlayBtn.innerHTML = '<i class="fas fa-play"></i> 自动播放';
+                autoPlayBtn.classList.remove('btn-primary');
+                autoPlayBtn.classList.add('btn-secondary');
+            } else {
+                // 开始自动播放
+                autoPlayBtn.innerHTML = '<i class="fas fa-pause"></i> 停止播放';
+                autoPlayBtn.classList.remove('btn-secondary');
+                autoPlayBtn.classList.add('btn-primary');
+                
+                autoPlayInterval = setInterval(function() {
+                    if (currentIndex < currentSentences.length - 1) {
+                        showNextSentence();
+                    } else {
+                        // 播放到末尾，停止自动播放
+                        clearInterval(autoPlayInterval);
+                        autoPlayInterval = null;
+                        autoPlayBtn.innerHTML = '<i class="fas fa-play"></i> 自动播放';
+                        autoPlayBtn.classList.remove('btn-primary');
+                        autoPlayBtn.classList.add('btn-secondary');
+                    }
+                }, 3000); // 3秒切换一句
+            }
+        });
+        
+        // 添加字体大小调整功能
+        const fontSizeControl = document.createElement('div');
+        fontSizeControl.className = 'font-size-control';
+        fontSizeControl.innerHTML = `
+            <button class="font-btn" id="fontSmaller">A-</button>
+            <span class="font-size-label">字体大小</span>
+            <button class="font-btn" id="fontBigger">A+</button>
+        `;
+        
+        // 将字体控制添加到文件选择区域下方
+        const fileSelector = document.querySelector('.file-selector');
+        fileSelector.parentNode.insertBefore(fontSizeControl, fileSelector.nextSibling);
+        
+        // 添加字体控制样式
+        const fontSizeStyle = document.createElement('style');
+        fontSizeStyle.textContent = `
+            .font-size-control {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                padding: 12px 20px;
+                background-color: white;
+                border-bottom: 1px solid #eaeaea;
+            }
+            
+            .font-btn {
+                width: 40px;
+                height: 40px;
+                border-radius: 50%;
+                border: 2px solid #6a11cb;
+                background-color: white;
+                color: #6a11cb;
+                font-size: 1.2rem;
+                font-weight: bold;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.2s;
+            }
+            
+            .font-btn:hover {
+                background-color: #6a11cb;
+                color: white;
+            }
+            
+            .font-size-label {
+                font-weight: 600;
+                color: #555;
+                font-size: 0.95rem;
+            }
+        `;
+        document.head.appendChild(fontSizeStyle);
+        
+        // 字体大小控制功能
+        let currentFontSize = 1.1; // rem
+        
+        document.getElementById('fontSmaller').addEventListener('click', function() {
+            if (currentFontSize > 0.8) {
+                currentFontSize -= 0.1;
+                updateFontSize();
+            }
+        });
+        
+        document.getElementById('fontBigger').addEventListener('click', function() {
+            if (currentFontSize < 1.8) {
+                currentFontSize += 0.1;
+                updateFontSize();
+            }
+        });
+        
+        function updateFontSize() {
+            const sentences = document.querySelectorAll('.sentence');
+            sentences.forEach(sentence => {
+                sentence.style.fontSize = `${currentFontSize}rem`;
+            });
+        }
+        
+        // 添加夜间模式切换
+        const nightModeToggle = document.createElement('div');
+        nightModeToggle.className = 'night-mode-toggle';
+        nightModeToggle.innerHTML = `
+            <label class="switch">
+                <input type="checkbox" id="nightModeCheckbox">
+                <span class="slider"></span>
+            </label>
+            <span class="night-mode-label">夜间模式</span>
+        `;
+        
+        // 将夜间模式切换添加到字体控制下方
+        fontSizeControl.parentNode.insertBefore(nightModeToggle, fontSizeControl.nextSibling);
+        
+        // 添加夜间模式样式
+        const nightModeStyle = document.createElement('style');
+        nightModeStyle.textContent = `
+            .night-mode-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 15px;
+                padding: 12px 20px;
+                background-color: white;
+                border-bottom: 1px solid #eaeaea;
+            }
+            
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 50px;
+                height: 26px;
+            }
+            
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                transition: .4s;
+                border-radius: 34px;
+            }
+            
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                transition: .4s;
+                border-radius: 50%;
+            }
+            
+            input:checked + .slider {
+                background-color: #6a11cb;
+            }
+            
+            input:checked + .slider:before {
+                transform: translateX(24px);
+            }
+            
+            .night-mode-label {
+                font-weight: 600;
+                color: #555;
+                font-size: 0.95rem;
+            }
+            
+            body.night-mode {
+                background-color: #121212;
+                color: #e0e0e0;
+            }
+            
+            body.night-mode .file-selector,
+            body.night-mode .font-size-control,
+            body.night-mode .night-mode-toggle,
+            body.night-mode .controls {
+                background-color: #1e1e1e;
+                border-color: #333;
+            }
+            
+            body.night-mode .file-select {
+                background-color: #2d2d2d;
+                border-color: #444;
+                color: #e0e0e0;
+            }
+            
+            body.night-mode .btn-secondary {
+                background-color: #2d2d2d;
+                color: #e0e0e0;
+            }
+            
+            body.night-mode .empty-state {
+                color: #aaa;
+            }
+            
+            body.night-mode .empty-state i {
+                color: #555;
+            }
+        `;
+        document.head.appendChild(nightModeStyle);
+        
+        // 夜间模式切换功能
+        document.getElementById('nightModeCheckbox').addEventListener('change', function() {
+            document.body.classList.toggle('night-mode', this.checked);
+            
+            // 保存夜间模式设置到本地存储
+            localStorage.setItem('nightMode', this.checked);
+        });
+        
+        // 加载夜间模式设置
+        const savedNightMode = localStorage.getItem('nightMode') === 'true';
+        document.getElementById('nightModeCheckbox').checked = savedNightMode;
+        if (savedNightMode) {
+            document.body.classList.add('night-mode');
+        }
+        
+        // 添加进度指示器
+        const progressIndicator = document.createElement('div');
+        progressIndicator.className = 'progress-indicator';
+        
+        // 将进度指示器添加到导航栏
+        const headerContent = document.querySelector('.header-content');
+        headerContent.appendChild(progressIndicator);
+        
+        // 添加进度指示器样式
+        const progressStyle = document.createElement('style');
+        progressStyle.textContent = `
+            .progress-indicator {
+                width: 100%;
+                height: 4px;
+                background-color: rgba(255, 255, 255, 0.2);
+                border-radius: 2px;
+                margin-top: 10px;
+                overflow: hidden;
+                display: none;
+            }
+            
+            .progress-bar {
+                height: 100%;
+                background-color: #FFD166;
+                border-radius: 2px;
+                transition: width 0.3s ease;
+            }
+            
+            .current-file {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-end;
+            }
+            
+            .progress-text {
+                font-size: 0.75rem;
+                opacity: 0.8;
+                margin-top: 2px;
+            }
+        `;
+        document.head.appendChild(progressStyle);
+        
+        // 更新进度指示器
+        function updateProgressIndicator() {
+            if (currentSentences.length === 0) {
+                progressIndicator.style.display = 'none';
+                return;
+            }
+            
+            const progress = ((currentIndex + 1) / currentSentences.length) * 100;
+            
+            // 创建或更新进度条
+            let progressBar = progressIndicator.querySelector('.progress-bar');
+            if (!progressBar) {
+                progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressIndicator.innerHTML = '';
+                progressIndicator.appendChild(progressBar);
+            }
+            
+            progressBar.style.width = `${progress}%`;
+            progressIndicator.style.display = 'block';
+            
+            // 更新进度文本
+            let progressText = currentFileElement.querySelector('.progress-text');
+            if (!progressText) {
+                progressText = document.createElement('div');
+                progressText.className = 'progress-text';
+                currentFileElement.appendChild(progressText);
+            }
+            
+            progressText.textContent = `${currentIndex + 1}/${currentSentences.length}`;
+        }
+        
+        // 在渲染句子时更新进度指示器
+        const originalRenderCurrentSentence = renderCurrentSentence;
+        renderCurrentSentence = function() {
+            originalRenderCurrentSentence();
+            updateProgressIndicator();
+        };
+        
+        // 在加载文件时也更新进度指示器
+        const originalLoadFile = loadFile;
+        loadFile = async function(fileName) {
+            await originalLoadFile(fileName);
+            updateProgressIndicator();
+        };
+        
+        // 初始化完成
+        console.log('导游词阅读器初始化完成');
+    </script>
+</body>
+</html>
