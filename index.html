@@ -8,7 +8,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f2f6fa;
+            background: #f5f8fc;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -21,16 +21,16 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 0.5rem;
-            border-bottom: 1px solid #cfddee;
+            border-bottom: 1px solid #d0deee;
             position: sticky;
             top: 0;
             z-index: 10;
-            font-size: 0.95rem;
         }
         .logo {
             font-weight: 600;
             color: #1e4b6e;
             margin-right: 0.25rem;
+            font-size: 1rem;
         }
         .file-select {
             display: flex;
@@ -41,7 +41,7 @@
         }
         .file-select select {
             flex: 1;
-            min-width: 160px;
+            min-width: 180px;
             padding: 0.4rem 1.8rem 0.4rem 0.8rem;
             border-radius: 24px;
             border: 1px solid #b4c9db;
@@ -70,7 +70,7 @@
         .paper {
             background: white;
             border-radius: 24px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 16px rgba(0,20,30,0.08);
             padding: 1.5rem 1.2rem;
             min-height: 60vh;
         }
@@ -80,16 +80,16 @@
             align-items: baseline;
             padding-bottom: 0.8rem;
             margin-bottom: 1.2rem;
-            border-bottom: 1px dashed #c4d3e3;
+            border-bottom: 1px dashed #c8d8e8;
         }
         .file-name {
             font-size: 1.3rem;
             font-weight: 500;
-            color: #13456b;
+            color: #144a6f;
             word-break: break-word;
         }
         .count {
-            background: #e2ebf3;
+            background: #e2ecf5;
             padding: 0.2rem 0.9rem;
             border-radius: 30px;
             font-size: 0.8rem;
@@ -123,18 +123,15 @@
     <div class="navbar">
         <span class="logo">📖 导游词</span>
         <div class="file-select">
-            <select id="fileSelector" aria-label="选择导游词文件">
-                <option value="">— 加载目录中 —</option>
+            <select id="fileSelector" aria-label="选择导游词">
+                <option value="">— 加载配置 —</option>
             </select>
             <button class="refresh-btn" id="refreshBtn">↻ 刷新</button>
         </div>
     </div>
     <div class="reader">
         <div class="paper" id="readerPaper">
-            <div class="placeholder" id="placeholderMsg">
-                <div>📁 选择上方文件开始阅读</div>
-                <div style="font-size:0.9rem; margin-top:0.5rem;">从 text/ 目录获取</div>
-            </div>
+            <div class="placeholder">📁 选择上方文件开始阅读</div>
         </div>
     </div>
 
@@ -144,8 +141,9 @@
             const refreshBtn = document.getElementById('refreshBtn');
             const readerPaper = document.getElementById('readerPaper');
 
-            let currentFileName = '';
-            let fileList = []; // { name, path }
+            // 数据结构: 存储从json解析的条目 [{ name: "故宫", file: "gugong.txt" }, ...]
+            let guideList = [];
+            let currentFile = ''; // 当前选中的文件名（实际txt文件名）
 
             function showPlaceholder(msg) {
                 readerPaper.innerHTML = `<div class="placeholder">${msg || '📁 选择文件'}</div>`;
@@ -158,7 +156,7 @@
             }
             function escapeHtml(unsafe) {
                 if (!unsafe) return '';
-                return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             }
 
             // 按句子拆分
@@ -172,159 +170,141 @@
                 return sentences.map(s => s.trim());
             }
 
-            function renderContent(content, fileName) {
+            function renderContent(content, displayName, fileName) {
                 if (!content || content.trim() === '') {
                     readerPaper.innerHTML = `
-                        <div class="file-header"><span class="file-name">${escapeHtml(fileName)}</span><span class="count">空文件</span></div>
+                        <div class="file-header">
+                            <span class="file-name">${escapeHtml(displayName)}</span>
+                            <span class="count">空文件</span>
+                        </div>
                         <div class="placeholder">📭 没有内容</div>
                     `;
                     return;
                 }
                 const sentences = splitSentences(content);
-                const header = `<div class="file-header"><span class="file-name">${escapeHtml(fileName)}</span><span class="count">${sentences.length} 句</span></div>`;
+                const header = `
+                    <div class="file-header">
+                        <span class="file-name">${escapeHtml(displayName)}</span>
+                        <span class="count">${sentences.length} 句</span>
+                    </div>
+                `;
                 let listHtml = '<div class="sentence-list">';
-                sentences.forEach(s => { listHtml += `<div class="sentence-item">${escapeHtml(s)}</div>`; });
+                sentences.forEach(s => {
+                    listHtml += `<div class="sentence-item">${escapeHtml(s)}</div>`;
+                });
                 listHtml += '</div>';
                 readerPaper.innerHTML = header + listHtml;
             }
 
-            function loadFileContent(filePath, fileName) {
+            // 加载具体文件内容 (fileName 是实际txt文件名，如 "gugong.txt")
+            function loadFileContent(fileName, displayName) {
+                if (!fileName) return;
                 showLoading();
+                // 构建路径：text/文件名
+                const filePath = `./text/${encodeURIComponent(fileName)}`;
                 fetch(filePath)
                     .then(res => {
                         if (!res.ok) throw new Error(`HTTP ${res.status}`);
                         return res.text();
                     })
-                    .then(text => renderContent(text, fileName))
+                    .then(text => renderContent(text, displayName, fileName))
                     .catch(err => {
                         console.error(err);
-                        showError(`读取失败: ${fileName} (${err.message})`);
+                        showError(`读取失败: ${displayName} (${err.message})`);
                     });
             }
 
-            // 核心：直接获取 /text 目录下的文件列表（解析HTML索引页面）
-            function fetchFileListFromTextDir() {
+            // 加载JSON配置文件
+            function loadGuideList() {
                 fileSelector.disabled = true;
-                fileSelector.innerHTML = '<option value="">— 扫描目录 —</option>';
-
-                // 尝试获取 text/ 目录，大多数服务器会返回索引页面或403/404
-                // 我们通过 fetch 获取 text/ 目录的 HTML，然后解析其中的 .txt 链接
-                const textDirUrl = './text/';  // 同级目录下的 text 文件夹
-
-                fetch(textDirUrl, { method: 'GET', cache: 'no-cache' })
+                fileSelector.innerHTML = '<option value="">— 加载配置 —</option>';
+                
+                // 尝试读取同级的 text/list.json 或根目录list.json，但按需求从text目录获取，这里放在 ./text/list.json
+                fetch('./text/list.json?t=' + Date.now())  // 加时间戳防止缓存
                     .then(response => {
                         if (!response.ok) {
-                            // 如果目录索引被禁止，尝试获取 text/index.json 或者降级方案
-                            throw new Error(`无法访问目录: ${response.status}`);
+                            throw new Error(`无法加载list.json (${response.status})`);
                         }
-                        return response.text();
+                        return response.json();
                     })
-                    .then(html => {
-                        // 解析 HTML 中所有 .txt 文件的链接 (兼容 Apache, Nginx, 简单列表)
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const links = doc.querySelectorAll('a');
-                        const txtFiles = [];
-
-                        links.forEach(link => {
-                            const href = link.getAttribute('href');
-                            if (href && href.toLowerCase().endsWith('.txt')) {
-                                // 提取文件名（去除可能的路径）
-                                let fileName = href;
-                                if (fileName.includes('/')) fileName = fileName.split('/').pop();
-                                if (fileName.includes('?')) fileName = fileName.split('?')[0];
-                                if (fileName && fileName.toLowerCase().endsWith('.txt')) {
-                                    txtFiles.push(fileName);
-                                }
-                            }
-                        });
-
-                        // 去重
-                        const unique = [...new Set(txtFiles)].sort((a,b) => a.localeCompare(b));
-                        
-                        if (unique.length === 0) {
-                            // 没有解析到 .txt 文件，可能是服务器返回了非索引页面，尝试默认列表或报错
-                            console.warn('未从目录解析到txt文件，尝试常用文件名');
-                            // 最后尝试几个常见文件名（可手工添加）
-                            const fallback = ['故宫.txt', '颐和园.txt', '长城.txt', '天坛.txt', '兵马俑.txt'];
-                            // 过滤存在性？没法验证，直接展示让用户点
-                            updateSelectorWithFiles(fallback);
+                    .then(data => {
+                        // 支持两种格式：数组 [{name, file}] 或 {list: [...]}
+                        let items = [];
+                        if (Array.isArray(data)) {
+                            items = data;
+                        } else if (data.list && Array.isArray(data.list)) {
+                            items = data.list;
+                        } else if (data.guides && Array.isArray(data.guides)) {
+                            items = data.guides;
                         } else {
-                            updateSelectorWithFiles(unique);
+                            throw new Error('JSON格式不对，应为数组或包含list字段的数组');
+                        }
+
+                        // 过滤：必须有name和file字段，file以.txt结尾
+                        guideList = items.filter(item => item.name && item.file && item.file.toLowerCase().endsWith('.txt'));
+                        
+                        if (guideList.length === 0) {
+                            fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
+                            fileSelector.disabled = false;
+                            showPlaceholder('list.json中无有效条目');
+                            return;
+                        }
+
+                        // 构建下拉选项
+                        let options = '<option value="">— 选择导游词 —</option>';
+                        guideList.forEach((item, index) => {
+                            // 用文件名作为value，显示名称作为文本
+                            const selected = (item.file === currentFile) ? 'selected' : '';
+                            options += `<option value="${escapeHtml(item.file)}" data-display="${escapeHtml(item.name)}" ${selected}>${escapeHtml(item.name)}</option>`;
+                        });
+                        fileSelector.innerHTML = options;
+                        fileSelector.disabled = false;
+
+                        // 如果当前有选中的文件且在列表中，自动加载
+                        if (currentFile) {
+                            const found = guideList.find(item => item.file === currentFile);
+                            if (found) {
+                                loadFileContent(found.file, found.name);
+                            } else {
+                                currentFile = '';
+                                showPlaceholder('请选择导游词');
+                            }
                         }
                     })
                     .catch(err => {
-                        console.warn('目录获取失败:', err);
-                        // 降级方案：展示默认预设（确保至少能工作）
-                        const defaultFiles = ['故宫.txt', '颐和园.txt', '长城.txt', '兵马俑.txt', '天坛.txt'];
-                        updateSelectorWithFiles(defaultFiles);
+                        console.error('加载list.json失败:', err);
+                        fileSelector.innerHTML = '<option value="">— 加载失败 —</option>';
+                        fileSelector.disabled = false;
+                        showError(`无法加载文件列表: ${err.message}`);
                     });
-            }
-
-            function updateSelectorWithFiles(filenames) {
-                if (!filenames || filenames.length === 0) {
-                    fileSelector.innerHTML = '<option value="">— 无txt文件 —</option>';
-                    fileSelector.disabled = false;
-                    return;
-                }
-
-                // 过滤 .txt 并去重
-                const unique = [...new Set(filenames.filter(f => f && f.toLowerCase().endsWith('.txt')))];
-                if (unique.length === 0) {
-                    fileSelector.innerHTML = '<option value="">— 无txt文件 —</option>';
-                    fileSelector.disabled = false;
-                    return;
-                }
-
-                // 构建 options
-                let options = '<option value="">— 选择文件 —</option>';
-                unique.forEach(name => {
-                    const selected = (name === currentFileName) ? 'selected' : '';
-                    options += `<option value="${escapeHtml(name)}" ${selected}>${escapeHtml(name)}</option>`;
-                });
-                fileSelector.innerHTML = options;
-                fileSelector.disabled = false;
-
-                // 更新 fileList
-                fileList = unique.map(name => ({
-                    name,
-                    path: `./text/${encodeURIComponent(name)}`
-                }));
-
-                // 如果当前文件名还在列表中，自动加载（通常首次没有）
-                if (currentFileName && unique.includes(currentFileName)) {
-                    const file = fileList.find(f => f.name === currentFileName);
-                    if (file) loadFileContent(file.path, file.name);
-                } else {
-                    currentFileName = '';
-                    // 不清空占位，除非用户选择
-                }
             }
 
             // 选择事件
             fileSelector.addEventListener('change', function(e) {
-                const name = e.target.value;
-                if (!name) {
-                    currentFileName = '';
-                    showPlaceholder('请选择文件');
+                const selectedFile = e.target.value;  // 文件名
+                if (!selectedFile) {
+                    currentFile = '';
+                    showPlaceholder('请选择导游词');
                     return;
                 }
-                const file = fileList.find(f => f.name === name);
-                if (file) {
-                    currentFileName = file.name;
-                    loadFileContent(file.path, file.name);
+
+                // 找到对应的条目
+                const selectedItem = guideList.find(item => item.file === selectedFile);
+                if (selectedItem) {
+                    currentFile = selectedItem.file;
+                    loadFileContent(selectedItem.file, selectedItem.name);
                 } else {
-                    // 容错：重新扫描
-                    fetchFileListFromTextDir();
+                    // 容错：刷新列表
+                    loadGuideList();
                 }
             });
 
             refreshBtn.addEventListener('click', function() {
-                fetchFileListFromTextDir();
+                loadGuideList();
             });
 
             // 初始化
-            fetchFileListFromTextDir();
+            loadGuideList();
         })();
     </script>
 </body>
