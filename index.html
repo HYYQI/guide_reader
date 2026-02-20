@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>哈工大航天馆导游词文本阅读器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f7fa;
+            padding: 10px;
+            max-width: 100%;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding-bottom: 20px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 15px 0;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            padding: 0 10px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            padding: 0 10px;
+        }
+        
+        .file-selector {
+            background-color: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .file-selector label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #1a237e;
+        }
+        
+        .file-selector select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e8eaf6;
+            border-radius: 8px;
+            font-size: 1rem;
+            background-color: white;
+            color: #333;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        
+        .file-selector select:focus {
+            border-color: #3949ab;
+        }
+        
+        .text-display {
+            background-color: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            min-height: 300px;
+            max-height: 70vh;
+            overflow-y: auto;
+            line-height: 1.7;
+        }
+        
+        .text-content {
+            font-size: 1rem;
+            white-space: pre-line;
+            text-align: justify;
+        }
+        
+        .text-content p {
+            margin-bottom: 15px;
+        }
+        
+        .highlight {
+            color: #d32f2f;
+            font-weight: 600;
+        }
+        
+        .important {
+            background-color: #fff9c4;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+        
+        .date {
+            color: #1976d2;
+            font-weight: 500;
+        }
+        
+        .name {
+            color: #388e3c;
+            font-weight: 500;
+        }
+        
+        .tech-term {
+            color: #7b1fa2;
+            font-weight: 500;
+        }
+        
+        .achievement {
+            color: #f57c00;
+            font-weight: 500;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 30px;
+            color: #d32f2f;
+            background-color: #ffebee;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .hint {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 15px;
+            padding: 0 10px;
+        }
+        
+        /* 隐藏滚动条但保持滚动功能 */
+        .text-display::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .text-display::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .text-display::-webkit-scrollbar-thumb {
+            background: #c5cae9;
+            border-radius: 10px;
+        }
+        
+        .text-display::-webkit-scrollbar-thumb:hover {
+            background: #7986cb;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 480px) {
+            .text-display {
+                padding: 15px;
+                max-height: 65vh;
+            }
+            
+            .text-content {
+                font-size: 0.95rem;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+        }
+        
+        @media (max-height: 700px) {
+            .text-display {
+                max-height: 60vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>哈工大航天馆导游词文本阅读器</h1>
+            <div class="subtitle">读取并显示 /text 目录下的TXT文档</div>
+        </header>
+        
+        <div class="file-selector">
+            <label for="fileSelect">选择要阅读的导游词文件：</label>
+            <select id="fileSelect">
+                <option value="">请选择文件...</option>
+                <option value="guide_full.txt">完整导游词</option>
+                <option value="guide_part1.txt">第一部分：哈工大历史</option>
+                <option value="guide_part2.txt">第二部分：中国航天梦起源</option>
+                <option value="guide_part3.txt">第三部分：两弹一星与导弹发展</option>
+                <option value="guide_part4.txt">第四部分：东方红一号卫星</option>
+                <option value="guide_part5.txt">第五部分：返回舱与长征火箭</option>
+                <option value="guide_part6.txt">第六部分：嫦娥探月工程</option>
+                <option value="guide_part7.txt">第七部分：神舟系列与航天英雄</option>
+                <option value="guide_part8.txt">第八部分：发动机展厅</option>
+                <option value="guide_part9.txt">第九部分：液体燃料导弹发展</option>
+                <option value="guide_part10.txt">第十部分：中国空间站建设</option>
+                <option value="guide_part11.txt">第十一部分：嫦娥五号与月壤研究</option>
+                <option value="guide_part12.txt">第十二部分：哈工大贡献与航天服</option>
+            </select>
+        </div>
+        
+        <div class="text-display">
+            <div class="loading" id="loadingText">
+                请从上方选择文件开始阅读...
+            </div>
+            <div class="text-content" id="textContent" style="display: none;"></div>
+            <div class="error" id="errorText" style="display: none;"></div>
+        </div>
+        
+        <div class="hint">
+            提示：此页面假设您的服务器/text目录下存在相应的TXT文件
+        </div>
+    </div>
+
+    <script>
+        // DOM元素
+        const fileSelect = document.getElementById('fileSelect');
+        const loadingText = document.getElementById('loadingText');
+        const textContent = document.getElementById('textContent');
+        const errorText = document.getElementById('errorText');
+        
+        // 文件选择事件监听
+        fileSelect.addEventListener('change', function() {
+            const selectedFile = this.value;
+            
+            if (!selectedFile) {
+                showLoading("请从上方选择文件开始阅读...");
+                return;
+            }
+            
+            loadTextFile(selectedFile);
+        });
+        
+        // 加载文本文件
+        async function loadTextFile(filename) {
+            showLoading("正在加载文件，请稍候...");
+            
+            try {
+                // 构建文件路径
+                const filePath = `/text/${filename}`;
+                
+                // 使用fetch API获取文件内容
+                const response = await fetch(filePath);
+                
+                if (!response.ok) {
+                    throw new Error(`文件加载失败: ${response.status} ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                
+                // 显示文本内容
+                displayText(text);
+                
+            } catch (error) {
+                showError(`无法加载文件 "${filename}"。错误信息: ${error.message}<br><br>
+                请确保：<br>
+                1. 文件位于服务器的/text目录下<br>
+                2. 文件名与选择列表中的名称一致<br>
+                3. 服务器允许访问该文件`);
+            }
+        }
+        
+        // 显示文本内容
+        function displayText(text) {
+            // 隐藏加载和错误信息
+            loadingText.style.display = 'none';
+            errorText.style.display = 'none';
+            
+            // 处理文本内容，添加一些简单的格式标记
+            let formattedText = text;
+            
+            // 简单的关键词高亮（可以根据需要调整）
+            formattedText = formattedText.replace(/哈工大/g, '<span class="highlight">哈工大</span>');
+            formattedText = formattedText.replace(/东方红一号/g, '<span class="achievement">东方红一号</span>');
+            formattedText = formattedText.replace(/长征/g, '<span class="tech-term">长征</span>');
+            formattedText = formattedText.replace(/嫦娥/g, '<span class="achievement">嫦娥</span>');
+            formattedText = formattedText.replace(/神舟/g, '<span class="achievement">神舟</span>');
+            formattedText = formattedText.replace(/杨利伟|翟志刚|孙家栋/g, '<span class="name">$&</span>');
+            formattedText = formattedText.replace(/\d{4}年/g, '<span class="date">$&</span>');
+            formattedText = formattedText.replace(/国防七子|两弹一星/g, '<span class="important">$&</span>');
+            
+            // 将换行符转换为HTML段落
+            const paragraphs = formattedText.split(/\n\s*\n/);
+            const htmlContent = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
+            
+            // 显示内容
+            textContent.innerHTML = htmlContent;
+            textContent.style.display = 'block';
+        }
+        
+        // 显示加载状态
+        function showLoading(message) {
+            loadingText.innerHTML = message;
+            loadingText.style.display = 'block';
+            textContent.style.display = 'none';
+            errorText.style.display = 'none';
+        }
+        
+        // 显示错误信息
+        function showError(message) {
+            errorText.innerHTML = message;
+            errorText.style.display = 'block';
+            loadingText.style.display = 'none';
+            textContent.style.display = 'none';
+        }
+        
+        // 页面加载时，如果有默认文件，自动加载
+        window.addEventListener('DOMContentLoaded', function() {
+            // 可以在这里设置默认加载的文件
+            // 例如：loadTextFile('guide_full.txt');
+        });
+    </script>
+</body>
+</html>
