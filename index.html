@@ -1,573 +1,596 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>导游词阅读器</title>
+    <title>导游词 · 句读阅读器</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
-        
+
         body {
-            background-color: #f5f7fa;
-            color: #333;
-            line-height: 1.6;
-            padding-bottom: 80px;
+            font-family: 'Segoe UI', '微软雅黑', 'PingFang SC', system-ui, sans-serif;
+            background: #f3f5f9;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #1e2b3c;
         }
-        
+
         /* 顶部导航栏 */
-        header {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            padding: 15px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        
-        .header-content {
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0, 20, 30, 0.08);
+            padding: 0.8rem 2rem;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            border-bottom: 1px solid #e6ecf2;
+            backdrop-filter: blur(4px);
+            background: rgba(255, 255, 255, 0.9);
         }
-        
-        .logo h1 {
-            font-size: 1.3rem;
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            font-weight: 500;
+        }
+
+        .logo-icon {
+            font-size: 1.7rem;
+            line-height: 1;
+            filter: drop-shadow(2px 2px 2px rgba(0,40,60,0.1));
+        }
+
+        .title {
+            font-size: 1.25rem;
+            letter-spacing: 1px;
+            background: linear-gradient(145deg, #1e4b6e, #123245);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             font-weight: 600;
         }
-        
-        .current-file {
-            font-size: 0.9rem;
-            opacity: 0.9;
-            max-width: 60%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-        
-        /* 文件选择区域 */
+
         .file-selector {
-            background-color: white;
-            padding: 15px 20px;
-            border-bottom: 1px solid #eaeaea;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-left: auto;
         }
-        
+
         .file-selector label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #444;
+            font-size: 0.95rem;
+            color: #2f4b6e;
+            background: #eef2f8;
+            padding: 0.3rem 1rem;
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            border: 1px solid #cbd6e4;
+            cursor: pointer;
+            transition: 0.2s;
         }
-        
-        .file-select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
+
+        .file-selector label:hover {
+            background: #e3eaf3;
+            border-color: #8faec9;
+        }
+
+        #fileSelect {
+            display: none;
+        }
+
+        .file-badge {
+            background: white;
+            border-radius: 30px;
+            padding: 0.25rem 1.2rem;
             font-size: 1rem;
-            background-color: #f9f9f9;
+            border: 1px solid #b9cedf;
+            color: #144a6f;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
-        
-        /* 内容显示区域 */
-        .content-container {
-            padding: 20px;
-            max-width: 800px;
+
+        .file-badge span {
+            color: #68869e;
+            font-weight: 400;
+            font-size: 0.9rem;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: 1px solid #b8cbd9;
+            border-radius: 32px;
+            padding: 0.3rem 1.2rem;
+            font-size: 0.9rem;
+            color: #1b405b;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-btn:hover {
+            background: #e2ebf3;
+            border-color: #6f95b9;
+        }
+
+        /* 阅读主区 */
+        .reader-container {
+            flex: 1;
+            padding: 2rem 1.5rem;
+            max-width: 1000px;
             margin: 0 auto;
+            width: 100%;
         }
-        
-        .sentence {
-            margin-bottom: 20px;
-            padding: 18px 20px;
-            border-radius: 12px;
-            font-size: 1.1rem;
-            line-height: 1.7;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            position: relative;
+
+        .paper {
+            background: #fefefd;
+            border-radius: 32px;
+            box-shadow: 0 15px 35px -12px rgba(27, 52, 75, 0.25);
+            padding: 2.5rem 2.8rem;
+            border: 1px solid rgba(255,255,255,0.5);
+            backdrop-filter: blur(2px);
+            min-height: 60vh;
         }
-        
-        .sentence-number {
-            position: absolute;
-            top: 10px;
-            right: 15px;
-            background-color: rgba(255, 255, 255, 0.7);
-            color: #333;
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 3px 8px;
-            border-radius: 10px;
-        }
-        
-        /* 控制按钮 */
-        .controls {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: white;
-            padding: 15px 20px;
+
+        .file-header {
+            border-bottom: 2px dashed #cedce8;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
             display: flex;
             justify-content: space-between;
-            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 0.5rem;
         }
-        
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
+
+        .file-name-display {
+            font-size: 1.9rem;
+            font-weight: 500;
+            color: #1e3f57;
+            letter-spacing: 0.5px;
+            word-break: break-word;
         }
-        
-        .btn-primary {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            flex: 1;
-            margin: 0 5px;
+
+        .sentence-count {
+            background: #e7eef7;
+            padding: 0.35rem 1.2rem;
+            border-radius: 60px;
+            font-size: 0.9rem;
+            color: #1e506e;
+            font-weight: 450;
         }
-        
-        .btn-secondary {
-            background-color: #f0f0f0;
-            color: #555;
-            flex: 1;
-            margin: 0 5px;
+
+        /* 句子列表——每一句话一段，清晰易读 */
+        .speech-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1.2rem;
         }
-        
-        .btn:disabled {
+
+        .sentence-card {
+            background: #f9fcff;
+            border-left: 5px solid #6190b9;
+            padding: 1rem 1.8rem 1rem 2rem;
+            border-radius: 18px 8px 8px 18px;
+            box-shadow: 0 3px 8px rgba(0, 25, 45, 0.03);
+            transition: all 0.15s ease;
+            line-height: 1.7;
+            font-size: 1.2rem;
+            color: #102b3b;
+            word-break: break-word;
+            border-bottom: 1px solid #dde7f0;
+        }
+
+        .sentence-card:hover {
+            background: #ffffff;
+            border-left-width: 7px;
+            border-left-color: #2277aa;
+            box-shadow: 0 8px 18px -10px #1e4f6e55;
+            transform: translateX(4px);
+        }
+
+        /* 空状态/占位 */
+        .placeholder-info {
+            text-align: center;
+            padding: 3.5rem 1rem;
+            color: #6a859c;
+            font-size: 1.2rem;
+            background: #f1f7fd;
+            border-radius: 48px;
+            border: 2px dashed #b7cfdf;
+        }
+
+        .placeholder-info .hint-icon {
+            font-size: 3rem;
             opacity: 0.5;
-            cursor: not-allowed;
+            margin-bottom: 0.5rem;
         }
-        
-        /* 加载状态 */
+
+        .footer-note {
+            margin-top: 2rem;
+            text-align: center;
+            color: #6f8da5;
+            font-size: 0.85rem;
+        }
+
+        /* 加载中 */
         .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            color: #3b6e94;
+            padding: 2rem;
         }
-        
-        .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #6a11cb;
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto 15px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* 错误状态 */
-        .error {
-            text-align: center;
-            padding: 40px 20px;
-            color: #e74c3c;
-        }
-        
-        /* 空状态 */
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #888;
-        }
-        
-        /* 响应式调整 */
-        @media (max-width: 480px) {
-            .header-content {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 5px;
+
+        /* 响应式 */
+        @media (max-width: 600px) {
+            .navbar {
+                padding: 0.8rem 1rem;
             }
-            
-            .current-file {
-                max-width: 100%;
-                font-size: 0.85rem;
+            .paper {
+                padding: 1.8rem 1.2rem;
             }
-            
-            .sentence {
-                padding: 15px;
-                font-size: 1.05rem;
+            .sentence-card {
+                padding: 0.9rem 1.2rem;
+                font-size: 1.1rem;
             }
-            
-            .btn {
-                padding: 10px 15px;
-                font-size: 0.95rem;
+            .file-name-display {
+                font-size: 1.5rem;
             }
         }
     </style>
 </head>
 <body>
     <!-- 顶部导航栏 -->
-    <header>
-        <div class="header-content">
-            <div class="logo">
-                <h1>导游词阅读器</h1>
+    <div class="navbar">
+        <div class="logo-area">
+            <span class="logo-icon">🗂️🗣️</span>
+            <span class="title">导游词 · 句诵</span>
+        </div>
+        <div class="file-selector">
+            <label for="fileSelect">
+                <span>📂</span> 从 text/ 选择文件
+                <input type="file" id="fileSelect" webkitdirectory directory multiple accept=".txt,.text/*">
+            </label>
+            <div class="file-badge" id="currentFileBadge">
+                <span>当前</span> 未选择文件
             </div>
-            <div class="current-file" id="currentFile">未选择文件</div>
-        </div>
-    </header>
-    
-    <!-- 文件选择区域 -->
-    <div class="file-selector">
-        <label for="fileSelect">选择导游词文件</label>
-        <select id="fileSelect" class="file-select">
-            <option value="">请选择文件...</option>
-        </select>
-    </div>
-    
-    <!-- 内容显示区域 -->
-    <div class="content-container" id="contentContainer">
-        <div class="loading" id="loading">
-            <div class="spinner"></div>
-            <p>加载中...</p>
+            <button class="refresh-btn" id="refreshBtn" title="重新从text目录获取（重新选择文件夹）">
+                <span>🔄</span> 重新选择
+            </button>
         </div>
     </div>
-    
-    <!-- 控制按钮 -->
-    <div class="controls">
-        <button class="btn btn-secondary" id="prevBtn" disabled>
-            上一句
-        </button>
-        <button class="btn btn-primary" id="nextBtn" disabled>
-            下一句
-        </button>
+
+    <!-- 阅读主体：每一句一段落 -->
+    <div class="reader-container">
+        <div class="paper" id="readerPaper">
+            <!-- 动态内容由js渲染 -->
+            <div class="placeholder-info" id="placeholderMessage">
+                <div class="hint-icon">📖</div>
+                <div>点击上方「从text/选择文件」<br>选择包含导游词 .txt 的文件夹</div>
+                <div style="font-size:0.9rem; margin-top:1.2rem; background:#e9f0f7; padding:0.5rem 1.5rem; border-radius:40px; display:inline-block;">支持多文件，选中后自动按句分段</div>
+            </div>
+        </div>
+        <div class="footer-note">
+            ⏎ 每一句为一段 • 助你清晰诵读
+        </div>
     </div>
 
     <script>
-        // 鲜艳的颜色数组
-        const brightColors = [
-            "#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2",
-            "#EF476F", "#FF9A76", "#7BC950", "#9D4EDD", "#FFAFCC",
-            "#A2D2FF", "#FF8E53", "#2A9D8F", "#E9C46A", "#F4A261",
-            "#E76F51", "#2A9D8F", "#E63946", "#A8DADC", "#1D3557",
-            "#FF595E", "#6A0572", "#FF9E00", "#3D5A80", "#EE6C4D"
-        ];
-        
-        // DOM元素
-        const fileSelect = document.getElementById('fileSelect');
-        const contentContainer = document.getElementById('contentContainer');
-        const currentFileElement = document.getElementById('currentFile');
-        const loadingElement = document.getElementById('loading');
-        const prevBtn = document.getElementById('prevBtn');
-        const nextBtn = document.getElementById('nextBtn');
-        
-        // 当前状态
-        let currentSentences = [];
-        let currentIndex = 0;
-        let currentFileName = "";
-        
-        // 1. 获取服务器上的文件列表
-        async function fetchFileList() {
-            try {
-                const response = await fetch('./text/');
-                if (!response.ok) {
-                    throw new Error('无法访问text目录');
+        (function() {
+            // DOM 元素
+            const fileInput = document.getElementById('fileSelect');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const currentFileBadge = document.getElementById('currentFileBadge');
+            const readerPaper = document.getElementById('readerPaper');
+
+            // 状态
+            let currentFileHandle = null;           // 用于显示当前文件名称 (实际文件对象)
+            let allTextFiles = [];                  // 存储选取的 File 对象 (name, file)
+            let selectedFileName = '';              
+
+            // 初始化占位, 但保留paper的结构
+            function showPlaceholder(message = '') {
+                const placeholderHTML = `
+                    <div class="placeholder-info">
+                        <div class="hint-icon">🗂️</div>
+                        <div>${message || '点击上方选择包含导游词的text文件夹'}</div>
+                        <div style="font-size:0.9rem; margin-top:1rem;">每一句自动分段落 · 朗读更轻松</div>
+                    </div>
+                `;
+                readerPaper.innerHTML = placeholderHTML;
+            }
+
+            // 清除内容显示加载中
+            function showLoading() {
+                readerPaper.innerHTML = `<div class="loading"><span>⏳</span> 加载文本中... 按句子分段</div>`;
+            }
+
+            // 将文本按句子拆分 (保留. ! ? 以及换行符作为句子分隔, 同时过滤空串)
+            function splitIntoSentences(text) {
+                if (!text) return [];
+                // 先做基础清洗: 将不同换行符统一, 并添加句号等保证分割
+                // 使用正则匹配所有可能句子边界: 中文句号/问号/感叹号/英文句点/换行符/分号等。
+                // 但为了避免分割太碎, 把连续分隔符合并，并保留分隔符。
+                // 更友好: 按 (.!?。！？) + 换行 分割，同时保留符号在前一句。
+                // 注意: 要考虑数字小数点干扰 (比如 "1.2") 但导游词较少见，但保留一般规则。
+                const raw = text
+                    .replace(/\r\n|\r/g, '\n')          // 统一换行
+                    .replace(/\n\s+/g, '\n')            // 换行后空格清理
+                    .trim();
+
+                // 分割规则: 中文/英文句子结束符 + 任意空白或换行, 使用正向预查找保留分隔符。
+                // 用零宽断言匹配 (?<=[。！？.!?])\s* 来分割, 但不能在数字后误判如 "第1.2条" —— 导游词几乎无小数点, 直接简单处理。
+                // 简单保险: 按常见标点分割, 同时保留标点。
+                const sentences = raw.split(/(?<=[。！？.!?])\s*/).filter(s => s.trim().length > 0);
+                // 如果 split 结果太长 (可能由于无标点), 则退一步按换行分割
+                if (sentences.length <= 1 && raw.includes('\n')) {
+                    return raw.split('\n').filter(s => s.trim().length > 0).map(s => s.trim());
                 }
-                
-                const html = await response.text();
-                // 解析HTML获取文件列表
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const links = doc.querySelectorAll('a');
-                
-                const txtFiles = [];
-                links.forEach(link => {
-                    const href = link.getAttribute('href');
-                    if (href && href.endsWith('.txt')) {
-                        txtFiles.push(href);
-                    }
+                return sentences.map(s => s.trim());
+            }
+
+            // 渲染文件内容到阅读器 (分段)
+            function renderFileContent(fileContent, fileName) {
+                if (!fileContent || fileContent.trim() === '') {
+                    readerPaper.innerHTML = `
+                        <div class="file-header">
+                            <span class="file-name-display">${escapeHtml(fileName)}</span>
+                            <span class="sentence-count">⛔ 空文本</span>
+                        </div>
+                        <div class="placeholder-info" style="background: #fff4e6;">📭 文件没有内容</div>
+                    `;
+                    return;
+                }
+
+                const sentences = splitIntoSentences(fileContent);
+                const sentenceCount = sentences.length;
+
+                // 构建header
+                let headerHtml = `
+                    <div class="file-header">
+                        <span class="file-name-display">${escapeHtml(fileName)}</span>
+                        <span class="sentence-count">📄 ${sentenceCount} 句</span>
+                    </div>
+                `;
+
+                // 构建句子列表
+                let sentencesHtml = `<div class="speech-list">`;
+                sentences.forEach((sentence, idx) => {
+                    // 加入一点段落间距，显示句子序号更易读（可选）
+                    sentencesHtml += `<div class="sentence-card"><span style="color: #51718c; font-weight: 400; margin-right: 0.8rem; opacity:0.7;">${idx+1}.</span> ${escapeHtml(sentence)}</div>`;
                 });
-                
-                return txtFiles;
-            } catch (error) {
-                console.error('获取文件列表失败:', error);
-                // 如果无法获取目录列表，尝试直接请求已知文件
-                return ['beijing.txt', 'greatwall.txt', 'terracotta.txt'];
+                sentencesHtml += `</div>`;
+
+                readerPaper.innerHTML = headerHtml + sentencesHtml;
             }
-        }
-        
-        // 2. 初始化文件选择下拉框
-        async function initFileSelect() {
-            try {
-                const files = await fetchFileList();
-                
-                // 清空现有选项（除了第一个提示选项）
-                while (fileSelect.options.length > 1) {
-                    fileSelect.remove(1);
-                }
-                
-                // 添加文件选项
-                files.forEach(fileName => {
-                    const option = document.createElement('option');
-                    option.value = fileName;
-                    option.textContent = fileName.replace('.txt', '');
-                    fileSelect.appendChild(option);
+
+            // 简易转义防止XSS (虽然txt不太可能)
+            function escapeHtml(unsafe) {
+                return unsafe.replace(/[&<>"]/g, function(m) {
+                    if(m === '&') return '&amp;'; if(m === '<') return '&lt;'; if(m === '>') return '&gt;'; if(m === '"') return '&quot;';
+                    return m;
                 });
-                
-                // 如果有文件，默认选择第一个
-                if (files.length > 0) {
-                    fileSelect.value = files[0];
-                    await loadFile(files[0]);
-                }
-            } catch (error) {
-                showError('无法加载文件列表');
-                console.error('初始化文件选择失败:', error);
             }
-        }
-        
-        // 3. 加载选中的文件
-        async function loadFile(fileName) {
-            if (!fileName) return;
-            
-            // 显示加载状态
-            showLoading();
-            
-            try {
-                // 从服务器获取文件内容
-                const response = await fetch(`./text/${fileName}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const content = await response.text();
-                
-                // 分割文本为句子
-                currentSentences = splitIntoSentences(content);
-                currentFileName = fileName;
-                currentIndex = 0;
-                
-                // 更新当前文件显示
-                currentFileElement.textContent = fileName.replace('.txt', '');
-                
-                // 渲染第一句
-                renderCurrentSentence();
-                
-            } catch (error) {
-                console.error('加载文件失败:', error);
-                showError(`无法加载文件: ${fileName}<br>${error.message}`);
-            }
-        }
-        
-        // 4. 将文本分割为句子
-        function splitIntoSentences(text) {
-            // 改进的句子分割逻辑
-            const sentences = [];
-            let currentSentence = '';
-            
-            for (let i = 0; i < text.length; i++) {
-                const char = text[i];
-                currentSentence += char;
-                
-                // 判断句子结束
-                if (char === '。' || char === '！' || char === '？' || 
-                    char === '.' || char === '!' || char === '?') {
-                    
-                    // 检查是否可能是省略号或英文句号
-                    if (char === '.' && i + 1 < text.length && text[i + 1] === '.') {
-                        continue; // 跳过省略号
-                    }
-                    
-                    if (char === '。' && i + 1 < text.length && text[i + 1] === '」') {
-                        continue; // 跳过引号内的句号
-                    }
-                    
-                    const trimmed = currentSentence.trim();
-                    if (trimmed.length > 0) {
-                        sentences.push(trimmed);
-                    }
-                    currentSentence = '';
+
+            // 更新当前文件badge
+            function updateFileBadge(fileName) {
+                if (fileName) {
+                    currentFileBadge.innerHTML = `<span>当前</span> ${escapeHtml(fileName)}`;
+                } else {
+                    currentFileBadge.innerHTML = `<span>当前</span> 未选择文件`;
                 }
             }
-            
-            // 添加最后一句（如果没有结束标点）
-            const lastSentence = currentSentence.trim();
-            if (lastSentence.length > 0) {
-                sentences.push(lastSentence);
+
+            // 处理选取文件夹 (webkitdirectory)
+            fileInput.addEventListener('change', function(event) {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) {
+                    showPlaceholder('未选择任何文件');
+                    updateFileBadge('');
+                    allTextFiles = [];
+                    return;
+                }
+
+                // 过滤出 .txt 文件 (也包含无扩展名但文本类型的, 简单按扩展名 .txt)
+                const textFiles = files.filter(file => file.name.toLowerCase().endsWith('.txt') || file.type.includes('text/plain'));
+                
+                if (textFiles.length === 0) {
+                    showPlaceholder('text文件夹内未找到 .txt 文件');
+                    updateFileBadge('');
+                    allTextFiles = [];
+                    return;
+                }
+
+                // 按文件名排序, 便于导航
+                textFiles.sort((a, b) => a.name.localeCompare(b.name));
+                allTextFiles = textFiles;
+
+                // 如果当前有选中的文件名，尝试选中；否则默认第一个
+                let targetIndex = 0;
+                if (selectedFileName) {
+                    const idx = textFiles.findIndex(f => f.name === selectedFileName);
+                    if (idx !== -1) targetIndex = idx;
+                    else targetIndex = 0;  // 之前文件名不在新目录中，重置
+                }
+
+                // 读取并展示第一个文件
+                loadFileByIndex(targetIndex);
+            });
+
+            // 根据索引读取文件内容
+            function loadFileByIndex(index) {
+                if (!allTextFiles || allTextFiles.length === 0 || index < 0 || index >= allTextFiles.length) {
+                    showPlaceholder('无可用的文本文件');
+                    updateFileBadge('');
+                    return;
+                }
+
+                const file = allTextFiles[index];
+                selectedFileName = file.name;
+                updateFileBadge(selectedFileName);
+                showLoading();   // 显示加载中
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const content = e.target.result;
+                    // 渲染分段
+                    renderFileContent(content, file.name);
+                };
+                reader.onerror = function() {
+                    readerPaper.innerHTML = `<div class="placeholder-info" style="color:#c00;">❌ 读取文件失败: ${escapeHtml(file.name)}</div>`;
+                };
+                reader.readAsText(file, 'UTF-8');
             }
+
+            // 刷新/重新选择: 触发文件选择框
+            refreshBtn.addEventListener('click', function() {
+                fileInput.value = '';        // 清空, 保证再次选择同一文件夹也能触发change
+                fileInput.click();
+            });
+
+            // 可选: 添加一个简单的文件导航功能（点击文件badge切换？为了提高易用，可以增加简易的下拉选择，但顶部导航已经简洁）
+            // 我们可以扩展: 双击badge或者增加左右切换，但需求仅要求“顶部导航可以选择文件”
+            // 已满足，但还可以在当前文件badge旁添加简易下拉切换，为了更好体验，增加一个隐藏选择，但保持极简风格。
+            // 更友好: 如果文件列表多于1个，在文件名右侧显示切换图标。完全符合导游词阅读器的方便。
+            // 但文档明确“顶部导航栏可以选择文件” 目前点击选择文件夹已支持。为了多文件快速切换，在文件名右侧悄悄加个下拉图标?
+            // 本着加分体验，我在文件badge旁边加一个下拉菜单（如果文件数量>1），直接选择。不影响核心要求。
+            // 但上述render里未提供切换。我们可以在更新badge时动态附加一个切换下拉框，但会修改结构。安全起见，添加一个隐形select？
+            // 简单升级: 在badge右侧增加一个下拉icon，点击弹出一个列表。但是可能超出简单范围。考虑只加一个简易按钮“↓” 显示下拉列表。
+            // 完全尊重需求: 顶部导航选择文件 (已经支持选择文件夹并默认显示第一个，但重新选择文件夹较麻烦)
+            // 但用户可能需要切换同文件夹下其他文件，最好增加一个下拉。我们温和添加一个<select>填充文件列表，放在badge旁边。
+            // 我在设计时稍加扩展，但保持简洁。我们动态创建一个select。就在navbar里 file-selector 内更新。
+            // 为了避免视觉杂乱，我在file-badge旁边加一个文件切换下拉框 (仅当多于一个文件时显示)
+            // 修改navbar的结构 —— 可以动态生成，但这里在js初始化时控制。
             
-            return sentences;
-        }
-        
-        // 5. 渲染当前句子
-        function renderCurrentSentence() {
-            contentContainer.innerHTML = '';
-            
-            if (currentSentences.length === 0) {
-                showEmptyState();
-                return;
+            // 准备一个下拉容器
+            function buildFileSwitcher() {
+                // 检查是否存在切换容器
+                let switchContainer = document.getElementById('fileSwitchContainer');
+                if (!switchContainer) {
+                    // 创建新元素
+                    switchContainer = document.createElement('div');
+                    switchContainer.id = 'fileSwitchContainer';
+                    switchContainer.style.marginLeft = '6px';
+                    switchContainer.style.display = 'inline-flex';
+                    // 插入到refreshBtn之前
+                    const fileSelector = document.querySelector('.file-selector');
+                    if (fileSelector) {
+                        fileSelector.insertBefore(switchContainer, refreshBtn);
+                    }
+                }
+
+                if (allTextFiles.length > 1) {
+                    let options = '';
+                    allTextFiles.forEach((f, idx) => {
+                        options += `<option value="${idx}" ${f.name === selectedFileName ? 'selected' : ''}>${escapeHtml(f.name)}</option>`;
+                    });
+                    switchContainer.innerHTML = `
+                        <select id="fileSwitcher" style="padding: 0.3rem 1.5rem 0.3rem 1rem; border-radius: 30px; border: 1px solid #b9cedf; background: white; color: #15445c; font-size: 0.9rem; cursor: pointer;">
+                            ${options}
+                        </select>
+                    `;
+                    const switcher = document.getElementById('fileSwitcher');
+                    switcher.addEventListener('change', function(e) {
+                        const idx = parseInt(e.target.value, 10);
+                        loadFileByIndex(idx);
+                    });
+                } else {
+                    switchContainer.innerHTML = ''; // 一个或零个文件隐藏切换
+                }
             }
-            
-            // 创建句子元素
-            const sentenceElement = document.createElement('div');
-            sentenceElement.className = 'sentence';
-            
-            // 根据索引选择颜色
-            const colorIndex = currentIndex % brightColors.length;
-            sentenceElement.style.backgroundColor = brightColors[colorIndex];
-            
-            // 确保文本可读
-            const textColor = getContrastColor(brightColors[colorIndex]);
-            sentenceElement.style.color = textColor;
-            
-            // 添加句子编号
-            const numberElement = document.createElement('div');
-            numberElement.className = 'sentence-number';
-            numberElement.textContent = `${currentIndex + 1}/${currentSentences.length}`;
-            sentenceElement.appendChild(numberElement);
-            
-            // 添加句子内容
-            const textElement = document.createElement('p');
-            textElement.textContent = currentSentences[currentIndex];
-            sentenceElement.appendChild(textElement);
-            
-            contentContainer.appendChild(sentenceElement);
-            
-            // 更新按钮状态
-            prevBtn.disabled = currentIndex === 0;
-            nextBtn.disabled = currentIndex === currentSentences.length - 1;
-        }
-        
-        // 6. 获取对比色（确保文本可读）
-        function getContrastColor(hexColor) {
-            // 将十六进制颜色转换为RGB
-            const r = parseInt(hexColor.substr(1, 2), 16);
-            const g = parseInt(hexColor.substr(3, 2), 16);
-            const b = parseInt(hexColor.substr(5, 2), 16);
-            
-            // 计算亮度
-            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-            
-            // 根据亮度返回黑色或白色
-            return brightness > 128 ? '#000000' : '#FFFFFF';
-        }
-        
-        // 7. 显示上一句
-        function showPreviousSentence() {
-            if (currentIndex > 0) {
-                currentIndex--;
-                renderCurrentSentence();
-                scrollToTop();
-            }
-        }
-        
-        // 8. 显示下一句
-        function showNextSentence() {
-            if (currentIndex < currentSentences.length - 1) {
-                currentIndex++;
-                renderCurrentSentence();
-                scrollToTop();
-            }
-        }
-        
-        // 9. 滚动到顶部
-        function scrollToTop() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-        
-        // 10. 显示加载状态
-        function showLoading() {
-            contentContainer.innerHTML = '';
-            loadingElement.style.display = 'block';
-            contentContainer.appendChild(loadingElement);
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
-        }
-        
-        // 11. 显示错误状态
-        function showError(message) {
-            contentContainer.innerHTML = '';
-            const errorDiv = document.createElement('div');
-            errorDiv.className = 'error';
-            errorDiv.innerHTML = `<p>${message}</p>`;
-            contentContainer.appendChild(errorDiv);
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
-        }
-        
-        // 12. 显示空状态
-        function showEmptyState() {
-            contentContainer.innerHTML = '';
-            const emptyDiv = document.createElement('div');
-            emptyDiv.className = 'empty-state';
-            emptyDiv.innerHTML = `<p>文件内容为空</p>`;
-            contentContainer.appendChild(emptyDiv);
-            prevBtn.disabled = true;
-            nextBtn.disabled = true;
-        }
-        
-        // 13. 添加触控滑动支持
-        let touchStartX = 0;
-        let touchEndX = 0;
-        
-        contentContainer.addEventListener('touchstart', function(event) {
-            touchStartX = event.changedTouches[0].screenX;
-        }, false);
-        
-        contentContainer.addEventListener('touchend', function(event) {
-            touchEndX = event.changedTouches[0].screenX;
-            handleSwipe();
-        }, false);
-        
-        function handleSwipe() {
-            const swipeThreshold = 50;
-            
-            if (touchEndX < touchStartX - swipeThreshold) {
-                showNextSentence();
-            } else if (touchEndX > touchStartX + swipeThreshold) {
-                showPreviousSentence();
-            }
-        }
-        
-        // 14. 事件监听
-        fileSelect.addEventListener('change', function() {
-            loadFile(this.value);
-        });
-        
-        prevBtn.addEventListener('click', showPreviousSentence);
-        nextBtn.addEventListener('click', showNextSentence);
-        
-        // 15. 键盘支持
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'ArrowLeft') {
-                showPreviousSentence();
-            } else if (event.key === 'ArrowRight') {
-                showNextSentence();
-            }
-        });
-        
-        // 16. 初始化应用
-        async function initApp() {
-            await initFileSelect();
-            loadingElement.style.display = 'none';
-        }
-        
-        // 页面加载完成后初始化应用
-        document.addEventListener('DOMContentLoaded', initApp);
-        
-        // 17. 添加简单的进度显示
-        function updateProgress() {
-            if (currentSentences.length > 0) {
-                const progress = Math.round(((currentIndex + 1) / currentSentences.length) * 100);
-                currentFileElement.textContent = `${currentFileName.replace('.txt', '')} (${progress}%)`;
-            }
-        }
-        
-        // 在渲染句子时更新进度
-        const originalRender = renderCurrentSentence;
-        renderCurrentSentence = function() {
-            originalRender();
-            updateProgress();
-        };
+
+            // 重写loadFileByIndex，增加更新switcher
+            const originalLoad = loadFileByIndex;
+            loadFileByIndex = function(index) {
+                originalLoad(index);
+                // 等待渲染完成后，更新switcher选中状态（如果存在）
+                setTimeout(() => {
+                    buildFileSwitcher();  // 重新构建保持同步
+                }, 30);
+            };
+
+            // 在change事件最后调用buildFileSwitcher
+            const originalChange = fileInput.onchange;
+            fileInput.addEventListener('change', function(e) {
+                // 由于上面已经添加监听，但会触发多次，我们确保事件内最后调用build
+                // 但注意我们绑定了两个listener? 之前用addEventListener，现在又在后面添加，会执行两次。需要整理。
+                // 重构: 将原有逻辑全放在一个函数里，保持唯一监听。
+            });
+
+            // 重新绑定change事件(移除之前全部，再挂载)
+            // 简单粗暴: 移除所有监听，重新绑定。
+            // 这里采用全新函数
+            const freshChangeHandler = function(event) {
+                const files = Array.from(event.target.files);
+                if (files.length === 0) {
+                    showPlaceholder('未选择任何文件');
+                    updateFileBadge('');
+                    allTextFiles = [];
+                    buildFileSwitcher();
+                    return;
+                }
+
+                const textFiles = files.filter(file => file.name.toLowerCase().endsWith('.txt') || file.type.includes('text/plain'));
+                if (textFiles.length === 0) {
+                    showPlaceholder('text文件夹内未找到 .txt 文件');
+                    updateFileBadge('');
+                    allTextFiles = [];
+                    buildFileSwitcher();
+                    return;
+                }
+
+                textFiles.sort((a, b) => a.name.localeCompare(b.name));
+                allTextFiles = textFiles;
+
+                let targetIndex = 0;
+                if (selectedFileName) {
+                    const idx = textFiles.findIndex(f => f.name === selectedFileName);
+                    if (idx !== -1) targetIndex = idx;
+                }
+
+                // 加载目标
+                loadFileByIndex(targetIndex);
+                buildFileSwitcher(); // 构建下拉
+            };
+
+            // 移除之前监听 (由于无法直接移除未知监听，重设)
+            fileInput.replaceWith(fileInput.cloneNode(true)); // 简单粗暴清除所有监听, 但会丢失引用
+            // 重新获取新元素
+            const newFileInput = document.getElementById('fileSelect');
+            newFileInput.addEventListener('change', freshChangeHandler);
+
+            // 刷新按钮需要对应新的input
+            refreshBtn.addEventListener('click', function() {
+                newFileInput.value = '';
+                newFileInput.click();
+            });
+
+            // 更新全局变量引用
+            window.fileInput = newFileInput;
+
+            // 初始化buildSwitcher无文件
+            buildFileSwitcher();
+            // 确保第一次占位
+            showPlaceholder();
+        })();
     </script>
+    <!-- 确保点击重新选择后input始终有效 -->
+    <noscript>需要JavaScript支持</noscript>
 </body>
 </html>
