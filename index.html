@@ -160,46 +160,49 @@
             }
         
             // 按句子拆分（处理换行/空格，避免拆分小数）
-            function splitSentences(text) {
-                if (!text) return [];
+function splitSentences(text) {
+    if (!text) return [];
+    
+    // 1. 统一换行符
+    let clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    // 2. 临时保护小数点
+    //    把数字间的点换成占位符，避免被拆分
+    clean = clean.replace(/(\d)\.(\d)/g, '$1###DOT###$2');
+    
+    // 3. 按句子边界拆分
+    //    边界：。！？.!? 以及换行符，后面可以跟空白字符
+    //    使用捕获分组保留分隔符
+    const rawSentences = clean.split(/([。！？.!?]\s*|\n\s*)/);
+    
+    // 4. 合并分隔符到前一个句子
+    const sentences = [];
+    for (let i = 0; i < rawSentences.length; i++) {
+        let s = rawSentences[i];
+        if (!s) continue;
         
-                // 1. 统一换行符为 \n
-                let clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        
-                // 2. 将换行符转换为特殊标记，暂时保护
-                //    用占位符替换换行，后面再转成句子分隔
-                clean = clean.replace(/\n/g, ' ###NEWLINE### ');
-        
-                // 3. 分句正则：
-                //    - 避免拆分小数 (如 3.14 中的点)
-                //    - 匹配中文/英文句号、问号、感叹号作为句子结束
-                //    - 后面可以跟空格或换行（已转成占位符）
-                //    - 使用正向预查保留标点符号
-                const sentences = [];
-                // 分句标记：(。！？.!?）后面跟空格或占位符，但不包括小数点和数字组合
-                // 先临时标记所有可能的句子边界
-                let marked = clean.replace(/([。！？.!?])(?=\s|###NEWLINE###|$)/g, '$1###SPLIT###');
-        
-                // 修复小数误判：把数字.数字之间的标记去掉
-                marked = marked.replace(/(\d)\.###SPLIT###(\d)/g, '$1.$2');
-        
-                // 按###SPLIT###分割
-                const rawSegments = marked.split('###SPLIT###').filter(s => s.trim().length > 0);
-        
-                // 处理每个片段，把###NEWLINE###还原成换行，但换行也作为句子分隔
-                for (let seg of rawSegments) {
-                    // 如果片段中包含换行占位符，进一步按换行拆分
-                    if (seg.includes('###NEWLINE###')) {
-                        const subSegs = seg.split('###NEWLINE###').filter(s => s.trim().length > 0);
-                        sentences.push(...subSegs.map(s => s.trim()));
-                    } else {
-                        sentences.push(seg.trim());
-                    }
-                }
-        
-                // 4. 过滤掉空字符串和只有空格的行
-                return sentences.filter(s => s.length > 0);
+        // 如果当前是分隔符（标点或换行），且前一个句子存在，则合并
+        if (i > 0 && /^[。！？.!?]\s*$|^\n\s*$/.test(s)) {
+            if (sentences.length > 0) {
+                sentences[sentences.length - 1] += s;
             }
+        } 
+        // 如果当前是文本内容，直接添加
+        else if (!/^[。！？.!?]\s*$|^\n\s*$/.test(s)) {
+            sentences.push(s);
+        }
+    }
+    
+    // 5. 还原小数点
+    const result = sentences.map(s => 
+        s.replace(/###DOT###/g, '.')
+    );
+    
+    // 6. 清理多余空白，过滤空句子
+    return result
+        .map(s => s.replace(/\s+/g, ' ').trim())
+        .filter(s => s.length > 0);
+}
         
             function renderContent(content, displayName, fileName) {
                 if (!content || content.trim() === '') {
