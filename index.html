@@ -3,318 +3,453 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>哈工大航天馆导游词文本阅读器</title>
+    <title>导游词阅读器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
         }
         
         body {
-            font-family: "PingFang SC", "Helvetica Neue", Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
             background-color: #f5f7fa;
-            padding: 10px;
-            max-width: 100%;
-            overflow-x: hidden;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 80px;
         }
         
-        .container {
-            max-width: 100%;
-            margin: 0 auto;
-            padding-bottom: 20px;
-        }
-        
+        /* 顶部导航栏 */
         header {
-            text-align: center;
-            padding: 15px 0;
-            background: linear-gradient(135deg, #1a237e 0%, #283593 100%);
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
             color: white;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            padding: 15px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
         
-        h1 {
-            font-size: 1.5rem;
-            margin-bottom: 5px;
-            padding: 0 10px;
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         
-        .subtitle {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            font-size: 1.5rem;
+        }
+        
+        .logo h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .current-file {
             font-size: 0.9rem;
             opacity: 0.9;
-            padding: 0 10px;
+            max-width: 60%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         
+        /* 文件选择区域 */
         .file-selector {
             background-color: white;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            padding: 15px 20px;
+            border-bottom: 1px solid #eaeaea;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
         
         .file-selector label {
             display: block;
             font-weight: 600;
             margin-bottom: 10px;
-            color: #1a237e;
+            color: #444;
+            font-size: 1rem;
         }
         
-        .file-selector select {
+        .file-select {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e8eaf6;
-            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 1rem;
-            background-color: white;
+            background-color: #f9f9f9;
             color: #333;
-            outline: none;
-            transition: border-color 0.3s;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236a11cb' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 15px center;
+            background-size: 16px;
         }
         
-        .file-selector select:focus {
-            border-color: #3949ab;
-        }
-        
-        .text-display {
-            background-color: white;
-            border-radius: 12px;
+        /* 内容显示区域 */
+        .content-container {
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-            min-height: 300px;
-            max-height: 70vh;
-            overflow-y: auto;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .sentence {
+            margin-bottom: 20px;
+            padding: 18px 20px;
+            border-radius: 12px;
+            font-size: 1.1rem;
             line-height: 1.7;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
         }
         
-        .text-content {
-            font-size: 1rem;
-            white-space: pre-line;
-            text-align: justify;
+        .sentence:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
         }
         
-        .text-content p {
-            margin-bottom: 15px;
-        }
-        
-        .highlight {
-            color: #d32f2f;
+        .sentence-number {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            background-color: rgba(255, 255, 255, 0.7);
+            color: #333;
+            font-size: 0.8rem;
             font-weight: 600;
+            padding: 3px 8px;
+            border-radius: 10px;
         }
         
-        .important {
-            background-color: #fff9c4;
-            padding: 2px 4px;
-            border-radius: 3px;
+        /* 控制按钮 */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+            z-index: 50;
         }
         
-        .date {
-            color: #1976d2;
-            font-weight: 500;
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
         
-        .name {
-            color: #388e3c;
-            font-weight: 500;
+        .btn-primary {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            flex: 1;
+            margin: 0 5px;
         }
         
-        .tech-term {
-            color: #7b1fa2;
-            font-weight: 500;
+        .btn-secondary {
+            background-color: #f0f0f0;
+            color: #555;
+            flex: 1;
+            margin: 0 5px;
         }
         
-        .achievement {
-            color: #f57c00;
-            font-weight: 500;
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
         }
         
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        /* 加载状态 */
         .loading {
             text-align: center;
-            padding: 30px;
+            padding: 40px 20px;
             color: #666;
-            font-style: italic;
+            font-size: 1.1rem;
         }
         
-        .error {
+        .loading i {
+            font-size: 2rem;
+            margin-bottom: 15px;
+            color: #6a11cb;
+        }
+        
+        /* 空状态 */
+        .empty-state {
             text-align: center;
-            padding: 30px;
-            color: #d32f2f;
-            background-color: #ffebee;
-            border-radius: 8px;
-            margin-top: 20px;
+            padding: 60px 20px;
+            color: #888;
         }
         
-        .hint {
-            text-align: center;
-            font-size: 0.85rem;
-            color: #777;
-            margin-top: 15px;
-            padding: 0 10px;
-        }
-        
-        /* 隐藏滚动条但保持滚动功能 */
-        .text-display::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .text-display::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        .text-display::-webkit-scrollbar-thumb {
-            background: #c5cae9;
-            border-radius: 10px;
-        }
-        
-        .text-display::-webkit-scrollbar-thumb:hover {
-            background: #7986cb;
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #ccc;
         }
         
         /* 响应式调整 */
         @media (max-width: 480px) {
-            .text-display {
+            .header-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+            
+            .current-file {
+                max-width: 100%;
+                font-size: 0.85rem;
+            }
+            
+            .sentence {
                 padding: 15px;
-                max-height: 65vh;
+                font-size: 1.05rem;
             }
             
-            .text-content {
+            .btn {
+                padding: 10px 15px;
                 font-size: 0.95rem;
-            }
-            
-            h1 {
-                font-size: 1.3rem;
-            }
-        }
-        
-        @media (max-height: 700px) {
-            .text-display {
-                max-height: 60vh;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>导游词文本阅读器</h1>
-            <div class="subtitle">读取并显示 /text 目录下的TXT文档</div>
-        </header>
-        
-        <div class="file-selector">
-            <label for="fileSelect">选择要阅读的导游词文件：</label>
-            <select id="fileSelect">
-                <option value="">请选择文件...</option>
-                <option value="1.txt">完整导游词</option>
-            </select>
-        </div>
-        
-        <div class="text-display">
-            <div class="loading" id="loadingText">
-                请从上方选择文件开始阅读...
+    <!-- 顶部导航栏 -->
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-map-marked-alt"></i>
+                <h1>导游词阅读器</h1>
             </div>
-            <div class="text-content" id="textContent" style="display: none;"></div>
-            <div class="error" id="errorText" style="display: none;"></div>
+            <div class="current-file" id="currentFile">未选择文件</div>
         </div>
-        
-        <div class="hint">
-            提示：此页面假设您的服务器/text目录下存在相应的TXT文件
+    </header>
+    
+    <!-- 文件选择区域 -->
+    <div class="file-selector">
+        <label for="fileSelect"><i class="fas fa-file-alt"></i> 选择导游词文件</label>
+        <select id="fileSelect" class="file-select">
+            <option value="">请选择文件...</option>
+            <!-- 文件选项将通过JavaScript动态添加 -->
+        </select>
+    </div>
+    
+    <!-- 内容显示区域 -->
+    <div class="content-container" id="contentContainer">
+        <div class="loading" id="loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            <p>加载中...</p>
         </div>
+    </div>
+    
+    <!-- 控制按钮 -->
+    <div class="controls">
+        <button class="btn btn-secondary" id="prevBtn">
+            <i class="fas fa-chevron-left"></i> 上一句
+        </button>
+        <button class="btn btn-primary" id="nextBtn">
+            下一句 <i class="fas fa-chevron-right"></i>
+        </button>
     </div>
 
     <script>
+        // 模拟的文本文件数据（实际应用中应从服务器获取）
+        const textFiles = {
+            "beijing.txt": `北京故宫，旧称紫禁城，位于北京中轴线的中心，是明清两个朝代的皇宫。故宫是世界上现存规模最大、保存最为完整的木质结构古建筑之一。故宫始建于明成祖永乐四年（1406年），永乐十八年（1420年）建成。故宫南北长961米，东西宽753米，四面围有高10米的城墙，城外有宽52米的护城河。故宫有大小宫殿七十多座，房屋九千余间。故宫的建筑分为外朝和内廷两部分。外朝的中心为太和殿、中和殿、保和殿，统称三大殿，是国家举行大典礼的地方。内廷的中心是乾清宫、交泰殿、坤宁宫，统称后三宫，是皇帝和皇后居住的正宫。`,
+            
+            "greatwall.txt": `长城，又称万里长城，是中国古代的军事防御工事，是一道高大、坚固而且连绵不断的长垣，用以限隔敌骑的行动。长城不是一道单纯孤立的城墙，而是以城墙为主体，同大量的城、障、亭、标相结合的防御体系。长城修筑的历史可上溯到西周时期，发生在首都镐京的著名典故"烽火戏诸侯"就源于此。春秋战国时期列国争霸，互相防守，长城修筑进入第一个高潮，但此时修筑的长度都比较短。秦灭六国统一天下后，秦始皇连接和修缮战国长城，始有万里长城之称。明朝是最后一个大修长城的朝代，今天人们所看到的长城多是此时修筑。长城资源主要分布在河北、北京、天津、山西、陕西、甘肃、内蒙古、黑龙江、吉林、辽宁、山东、河南、青海、宁夏、新疆等15个省区市。`,
+            
+            "terracotta.txt": `秦始皇陵兵马俑，亦简称秦兵马俑或秦俑，是第一批全国重点文物保护单位、第一批中国世界遗产，位于今陕西省西安市临潼区秦始皇陵以东1.5千米处的兵马俑坑内。兵马俑是古代墓葬雕塑的一个类别。古代实行人殉，奴隶是奴隶主生前的附属品，奴隶主死后奴隶要作为殉葬品为奴隶主陪葬。兵马俑即制成兵马（战车、战马、士兵）形状的殉葬品。1961年3月4日，秦始皇陵被国务院公布为第一批全国重点文物保护单位。1974年3月，兵马俑被发现。1987年，秦始皇陵及兵马俑坑被联合国教科文组织批准列入《世界遗产名录》，并被誉为"世界第八大奇迹"，先后有200多位外国元首和政府首脑参观访问，成为中国古代辉煌文明的一张金字名片，被誉为世界十大古墓稀世珍宝之一。`
+        };
+        
+        // 鲜艳的颜色数组
+        const brightColors = [
+            "#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2",
+            "#EF476F", "#FF9A76", "#7BC950", "#9D4EDD", "#FFAFCC",
+            "#A2D2FF", "#FF8E53", "#2A9D8F", "#E9C46A", "#F4A261",
+            "#E76F51", "#2A9D8F", "#E63946", "#A8DADC", "#1D3557",
+            "#FF595E", "#6A0572", "#FF9E00", "#3D5A80", "#EE6C4D"
+        ];
+        
         // DOM元素
         const fileSelect = document.getElementById('fileSelect');
-        const loadingText = document.getElementById('loadingText');
-        const textContent = document.getElementById('textContent');
-        const errorText = document.getElementById('errorText');
+        const contentContainer = document.getElementById('contentContainer');
+        const currentFileElement = document.getElementById('currentFile');
+        const loadingElement = document.getElementById('loading');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
         
-        // 文件选择事件监听
-        fileSelect.addEventListener('change', function() {
-            const selectedFile = this.value;
+        // 当前状态
+        let currentSentences = [];
+        let currentIndex = 0;
+        let currentFileName = "";
+        
+        // 初始化文件选择下拉框
+        function initFileSelect() {
+            // 清空现有选项（除了第一个提示选项）
+            while (fileSelect.options.length > 1) {
+                fileSelect.remove(1);
+            }
             
-            if (!selectedFile) {
-                showLoading("请从上方选择文件开始阅读...");
+            // 添加文件选项
+            Object.keys(textFiles).forEach(fileName => {
+                const option = document.createElement('option');
+                option.value = fileName;
+                option.textContent = fileName.replace('.txt', '');
+                fileSelect.appendChild(option);
+            });
+        }
+        
+        // 加载选中的文件
+        async function loadFile(fileName) {
+            if (!fileName) return;
+            
+            // 显示加载状态
+            loadingElement.style.display = 'block';
+            contentContainer.innerHTML = '';
+            contentContainer.appendChild(loadingElement);
+            
+            // 模拟从服务器加载文件（实际应用中应使用fetch API）
+            setTimeout(() => {
+                const content = textFiles[fileName];
+                if (content) {
+                    // 分割文本为句子
+                    currentSentences = splitIntoSentences(content);
+                    currentFileName = fileName;
+                    currentIndex = 0;
+                    
+                    // 更新当前文件显示
+                    currentFileElement.textContent = fileName.replace('.txt', '');
+                    
+                    // 渲染第一句
+                    renderCurrentSentence();
+                }
+                
+                // 隐藏加载状态
+                loadingElement.style.display = 'none';
+            }, 500);
+        }
+        
+        // 将文本分割为句子
+        function splitIntoSentences(text) {
+            // 简单的句子分割逻辑，实际应用可能需要更复杂的处理
+            return text.split(/[。！？!?]/)
+                .filter(sentence => sentence.trim().length > 0)
+                .map(sentence => sentence.trim() + (sentence.endsWith('。') ? '' : '。'));
+        }
+        
+        // 渲染当前句子
+        function renderCurrentSentence() {
+            contentContainer.innerHTML = '';
+            
+            if (currentSentences.length === 0) {
+                // 显示空状态
+                const emptyState = document.createElement('div');
+                emptyState.className = 'empty-state';
+                emptyState.innerHTML = `
+                    <i class="fas fa-file-alt"></i>
+                    <p>文件内容为空或无法加载</p>
+                `;
+                contentContainer.appendChild(emptyState);
                 return;
             }
             
-            loadTextFile(selectedFile);
-        });
-        
-        // 加载文本文件
-        async function loadTextFile(filename) {
-            showLoading("正在加载文件，请稍候...");
+            // 创建句子元素
+            const sentenceElement = document.createElement('div');
+            sentenceElement.className = 'sentence';
             
-            try {
-                // 构建文件路径
-                const filePath = `./text/${filename}`;
+            // 随机选择颜色（但确保相邻句子颜色不同）
+            let colorIndex = currentIndex % brightColors.length;
+            sentenceElement.style.backgroundColor = brightColors[colorIndex];
+            sentenceElement.style.color = getContrastColor(brightColors[colorIndex]);
+            
+            // 添加句子编号
+            const numberElement = document.createElement('div');
+            numberElement.className = 'sentence-number';
+            numberElement.textContent = `${currentIndex + 1}/${currentSentences.length}`;
+            sentenceElement.appendChild(numberElement);
+            
+            // 添加句子内容
+            const textElement = document.createElement('p');
+            textElement.textContent = currentSentences[currentIndex];
+            sentenceElement.appendChild(textElement);
+            
+            contentContainer.appendChild(sentenceElement);
+            
+            // 更新按钮状态
+            prevBtn.disabled = currentIndex === 0;
+            nextBtn.disabled = currentIndex === currentSentences.length - 1;
+        }
+        
+        // 获取对比色（确保文本可读）
+        function getContrastColor(hexColor) {
+            // 将十六进制颜色转换为RGB
+            const r = parseInt(hexColor.substr(1, 2), 16);
+            const g = parseInt(hexColor.substr(3, 2), 16);
+            const b = parseInt(hexColor.substr(5, 2), 16);
+            
+            // 计算亮度
+            const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+            
+            // 根据亮度返回黑色或白色
+            return brightness > 128 ? '#000000' : '#FFFFFF';
+        }
+        
+        // 显示上一句
+        function showPreviousSentence() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderCurrentSentence();
                 
-                // 使用fetch API获取文件内容
-                const response = await fetch(filePath);
-                
-                if (!response.ok) {
-                    throw new Error(`文件加载失败: ${response.status} ${response.statusText}`);
-                }
-                
-                const text = await response.text();
-                
-                // 显示文本内容
-                displayText(text);
-                
-            } catch (error) {
-                showError(`无法加载文件 "${filename}"。错误信息: ${error.message}<br><br>
-                请确保：<br>
-                1. 文件位于服务器的/text目录下<br>
-                2. 文件名与选择列表中的名称一致<br>
-                3. 服务器允许访问该文件`);
+                // 滚动到顶部
+                window.scrollTo({ top: 0, behavior: 'smooth' });
             }
         }
         
-        // 显示文本内容
-        function displayText(text) {
-            // 隐藏加载和错误信息
-            loadingText.style.display = 'none';
-            errorText.style.display = 'none';
-            
-            // 处理文本内容，添加一些简单的格式标记
-            let formattedText = text;
-            
-            
-            // 将换行符转换为HTML段落
-            const paragraphs = formattedText.split(/\n\s*\n/);
-            const htmlContent = paragraphs.map(p => `<p>${p.replace(/\n/g, '<br>')}</p>`).join('');
-            
-            // 显示内容
-            textContent.innerHTML = htmlContent;
-            textContent.style.display = 'block';
+        // 显示下一句
+        function showNextSentence() {
+            if (currentIndex < currentSentences.length - 1) {
+                currentIndex++;
+                renderCurrentSentence();
+                
+                // 滚动到顶部
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
         
-        // 显示加载状态
-        function showLoading(message) {
-            loadingText.innerHTML = message;
-            loadingText.style.display = 'block';
-            textContent.style.display = 'none';
-            errorText.style.display = 'none';
-        }
-        
-        // 显示错误信息
-        function showError(message) {
-            errorText.innerHTML = message;
-            errorText.style.display = 'block';
-            loadingText.style.display = 'none';
-            textContent.style.display = 'none';
-        }
-        
-        // 页面加载时，如果有默认文件，自动加载
-        window.addEventListener('DOMContentLoaded', function() {
-            // 可以在这里设置默认加载的文件
-            // 例如：loadTextFile('guide_full.txt');
+        // 事件监听
+        fileSelect.addEventListener('change', function() {
+            loadFile(this.value);
         });
-    </script>
-</body>
-</html>
+        
+        prevBtn.addEventListener('click', showPreviousSentence);
+        nextBtn.addEventListener('click', showNextSentence);
+        
+        // 添加键盘支持
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'ArrowLeft') {
+                showPreviousSentence();
+            } else if (event.key === 'ArrowRight') {
+                showNextSentence();
+            }
+        });
+        
+        // 添加触控滑动支持
