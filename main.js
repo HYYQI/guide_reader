@@ -162,8 +162,7 @@
                 // 自动选择第一个选项
                 if (guideList.length > 0 && !currentFile) {
                     const firstItem = guideList[0];
-                    currentFile = firstItem.file;
-                    loadFileContent(firstItem.value, firstItem.text);
+                    loadFileContent(firstItem.file, firstItem.name);
                 }
                 // 如果当前有选中的文件且在列表中，自动加载
                 else if (currentFile) {
