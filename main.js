@@ -144,13 +144,14 @@
 
                 if (guideList.length === 0) {
                     fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
-                    fileSelector.disabled = false;
+                    fileSelector.disabled = true;
                     showPlaceholder('list.json中无有效条目');
                     return;
                 }
 
                 // 构建下拉选项
-                let options = '<option value="">— 选择导游词 —</option>';
+                let options = '<option value="" id="select">— 选择导游词 —</option>';
+                const select_opt = document.getElementById("select")
                 guideList.forEach((item, index) => {
                     // 用文件名作为value，显示名称作为文本
                     const selected = (item.file === currentFile) ? 'selected' : '';
@@ -176,6 +177,13 @@
                 fileSelector.disabled = false;
                 showError(`无法加载文件列表: ${err.message}`);
             });
+            
+        selsct_opt.remove();
+        if (fileSelector.children.length === 0) {
+            fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
+            fileSelector.disable = true;
+        }
+
     }
 
     // 选择事件
@@ -200,6 +208,7 @@
 
     refreshBtn.addEventListener('click', function() {
         loadGuideList();
+        fileSelector.disable = true;
     });
 
     // 初始化
