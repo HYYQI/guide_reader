@@ -178,7 +178,7 @@
                 showError(`无法加载文件列表: ${err.message}`);
             });
             
-        selsct_opt.remove();
+        select_opt.remove();
         if (fileSelector.children.length === 0) {
             fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
             fileSelector.disable = true;
