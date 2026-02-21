@@ -169,7 +169,7 @@
                 else if (currentFile) {
                     const found = guideList.find(item => item.file === currentFile);
                     if (found) {
-                        loadFileContent(found.file, found.name);
+                        loadFileContent(found.value, found.text);
                     } else {
                         currentFile = '';
                         showPlaceholder('请选择导游词');
