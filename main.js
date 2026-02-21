@@ -205,6 +205,7 @@
 
     // 初始化
     loadGuideList();
+    console.log(document.getElementById("select"));
     document.getElementById("select").remove();
     if (fileSelector.children.length === 0) {
         fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
