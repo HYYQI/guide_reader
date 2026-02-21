@@ -150,7 +150,7 @@
                 }
 
                 // 构建下拉选项
-                let options = '<option value="" id="select">— 选择导游词 —</option>';
+                let options = ""
                 guideList.forEach((item, index) => {
                     // 用文件名作为value，显示名称作为文本
                     const selected = (item.file === currentFile) ? 'selected' : '';
@@ -205,10 +205,5 @@
 
     // 初始化
     loadGuideList();
-    console.log(document.getElementById("select"));
-    document.getElementById("select").remove();
-    if (fileSelector.children.length === 0) {
-        fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
-        fileSelector.disable = true;
-    }
+
 })();
