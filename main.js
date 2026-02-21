@@ -159,12 +159,11 @@
                 fileSelector.innerHTML = options;
                 fileSelector.disabled = false;
 
-                // 自动选择第一个选项（新增逻辑）
+                // 自动选择第一个选项
                 if (guideList.length > 0 && !currentFile) {
                     const firstItem = guideList[0];
                     currentFile = firstItem.file;
-                    fileSelector.value = firstItem.file; // 设置下拉框显示
-                    loadFileContent(firstItem.file, firstItem.name);
+                    loadFileContent(firstItem.value, firstItem.text);
                 }
                 // 如果当前有选中的文件且在列表中，自动加载
                 else if (currentFile) {
@@ -207,7 +206,7 @@
 
     refreshBtn.addEventListener('click', function() {
         loadGuideList();
-        fileSelector.disable = true;
+        fileSelector.disable = false;
     });
 
     // 初始化
