@@ -176,6 +176,7 @@
                 fileSelector.disabled = false;
                 showError(`无法加载文件列表: ${err.message}`);
             });
+        concel.log("准备删除")
         const select_opt = document.getElementById("select")
         select_opt.remove();
         if (fileSelector.children.length === 0) {
