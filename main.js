@@ -159,8 +159,15 @@
                 fileSelector.innerHTML = options;
                 fileSelector.disabled = false;
 
+                // 自动选择第一个选项（新增逻辑）
+                if (guideList.length > 0 && !currentFile) {
+                    const firstItem = guideList[0];
+                    currentFile = firstItem.file;
+                    fileSelector.value = firstItem.file; // 设置下拉框显示
+                    loadFileContent(firstItem.file, firstItem.name);
+                }
                 // 如果当前有选中的文件且在列表中，自动加载
-                if (currentFile) {
+                else if (currentFile) {
                     const found = guideList.find(item => item.file === currentFile);
                     if (found) {
                         loadFileContent(found.file, found.name);
