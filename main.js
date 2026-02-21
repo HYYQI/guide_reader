@@ -21,7 +21,12 @@
 
     function escapeHtml(unsafe) {
         if (!unsafe) return '';
-        return unsafe.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return unsafe
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
     }
 
     // 按句子拆分（处理换行/空格，避免拆分小数）
@@ -31,14 +36,12 @@
         // 1. 统一换行符
         let clean = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 
-        // 2. 临时保护小数点
-        //    把数字间的点换成占位符，避免被拆分
+        // 2. 临时保护小数点（如 3.14、2024.5）
         clean = clean.replace(/(\d)\.(\d)/g, '$1###DOT###$2');
 
-        // 3. 按句子边界拆分
-        //    边界：。！？.!? 以及换行符，后面可以跟空白字符
-        //    使用捕获分组保留分隔符
-        const rawSentences = clean.split(/([。！？.!?]\s*|\n\s*)/);
+        // 3. 按句子边界拆分（中文标点 + 英文标点 + 换行）
+        // 支持：。！？.!? …… ——
+        const rawSentences = clean.split(/([。！？.!?…—]+(?:\s*|\n\s*)|\n\s*)/);
 
         // 4. 合并分隔符到前一个句子
         const sentences = [];
@@ -46,69 +49,65 @@
             let s = rawSentences[i];
             if (!s) continue;
 
-            // 如果当前是分隔符（标点或换行），且前一个句子存在，则合并
-            if (i > 0 && /^[。！？.!?]\s*$|^\n\s*$/.test(s)) {
+            // 如果当前是分隔符，合并到前一个句子
+            if (/^[。！？.!?…—]+\s*$|^\n\s*$/.test(s)) {
                 if (sentences.length > 0) {
                     sentences[sentences.length - 1] += s;
                 }
-            }
-            // 如果当前是文本内容，直接添加
-            else if (!/^[。！？.!?]\s*$|^\n\s*$/.test(s)) {
+            } else {
                 sentences.push(s);
             }
         }
 
-        // 5. 还原小数点
-        const result = sentences.map(s =>
-            s.replace(/###DOT###/g, '.')
-        );
-
-        // 6. 清理多余空白，过滤空句子
-        return result
-            .map(s => s.replace(/\s+/g, ' ').trim())
+        // 5. 还原小数点并清理
+        return sentences
+            .map(s => s.replace(/###DOT###/g, '.').replace(/\s+/g, ' ').trim())
             .filter(s => s.length > 0);
     }
 
-    function renderContent(content, displayName, fileName) {
+    function renderContent(content, displayName) {
         if (!content || content.trim() === '') {
             readerPaper.innerHTML = `
-                                <div class="file-header">
-                                    <span class="file-name">${escapeHtml(displayName)}</span>
-                                    <span class="count">空文件</span>
-                                </div>
-                                <div class="placeholder">📭 没有内容</div>
-                            `;
+                <div class="file-header">
+                    <span class="file-name">${escapeHtml(displayName)}</span>
+                    <span class="count">空文件</span>
+                </div>
+                <div class="placeholder">📭 没有内容</div>
+            `;
             return;
         }
+
         const sentences = splitSentences(content);
         const header = `
-                            <div class="file-header">
-                                <span class="file-name">${escapeHtml(displayName)}</span>
-                                <span class="count">${sentences.length} 句</span>
-                            </div>
-                        `;
-        let listHtml = '<div class="sentence-list">';
-        sentences.forEach(s => {
-            listHtml += `<div class="sentence-item">${escapeHtml(s)}</div>`;
-        });
-        listHtml += '</div>';
+            <div class="file-header">
+                <span class="file-name">${escapeHtml(displayName)}</span>
+                <span class="count">${sentences.length} 句</span>
+            </div>
+        `;
+        
+        const listHtml = sentences.reduce((html, s) => 
+            html + `<div class="sentence-item">${escapeHtml(s)}</div>`, 
+            '<div class="sentence-list">'
+        ) + '</div>';
+        
         readerPaper.innerHTML = header + listHtml;
     }
 
-    // 加载具体文件内容 (fileName 是实际txt文件名，如 "gugong.txt")
+    // 加载具体文件内容
     function loadFileContent(fileName, displayName) {
         if (!fileName) return;
         showLoading();
-        // 构建路径：text/文件名
+        
         const filePath = `./text/${encodeURIComponent(fileName)}`;
+        
         fetch(filePath)
             .then(res => {
                 if (!res.ok) throw new Error(`HTTP ${res.status}`);
                 return res.text();
             })
-            .then(text => renderContent(text, displayName, fileName))
+            .then(text => renderContent(text, displayName))
             .catch(err => {
-                console.error(err);
+                console.error('加载文件失败:', err);
                 showError(`读取失败: ${displayName} (${err.message})`);
             });
     }
@@ -118,8 +117,7 @@
         fileSelector.disabled = true;
         fileSelector.innerHTML = '<option value="">— 加载配置 —</option>';
 
-        // 尝试读取同级的 text/list.json 或根目录list.json，但按需求从text目录获取，这里放在 ./text/list.json
-        fetch('./text/list.json?t=' + Date.now()) // 加时间戳防止缓存
+        fetch(`./text/list.json?t=${Date.now()}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error(`无法加载list.json (${response.status})`);
@@ -127,7 +125,7 @@
                 return response.json();
             })
             .then(data => {
-                // 支持两种格式：数组 [{name, file}] 或 {list: [...]}
+                // 支持多种格式
                 let items = [];
                 if (Array.isArray(data)) {
                     items = data;
@@ -136,79 +134,73 @@
                 } else if (data.guides && Array.isArray(data.guides)) {
                     items = data.guides;
                 } else {
-                    throw new Error('JSON格式不对，应为数组或包含list字段的数组');
+                    throw new Error('JSON格式应为数组或包含list/guides字段的对象');
                 }
 
-                // 过滤：必须有name和file字段，file以.txt结尾
-                guideList = items.filter(item => item.name && item.file && item.file.toLowerCase().endsWith('.txt'));
+                // 过滤有效条目
+                guideList = items.filter(item => 
+                    item.name && 
+                    item.file && 
+                    item.file.toLowerCase().endsWith('.txt')
+                );
 
                 if (guideList.length === 0) {
                     fileSelector.innerHTML = '<option value="">— 无有效导游词 —</option>';
-                    fileSelector.disabled = true;
                     showPlaceholder('list.json中无有效条目');
                     return;
                 }
 
                 // 构建下拉选项
-                let options = ""
-                guideList.forEach((item, index) => {
-                    // 用文件名作为value，显示名称作为文本
-                    const selected = (item.file === currentFile) ? 'selected' : '';
-                    options += `<option value="${escapeHtml(item.file)}" data-display="${escapeHtml(item.name)}" ${selected}>${escapeHtml(item.name)}</option>`;
-                });
-                fileSelector.innerHTML = options;
+                fileSelector.innerHTML = guideList.map(item => {
+                    const selected = item.file === currentFile ? 'selected' : '';
+                    return `<option value="${escapeHtml(item.file)}" ${selected}>${escapeHtml(item.name)}</option>`;
+                }).join('');
+                
                 fileSelector.disabled = false;
 
-                // 自动选择第一个选项
-                if (guideList.length > 0 && !currentFile) {
-                    const firstItem = guideList[0];
-                    loadFileContent(firstItem.file, firstItem.name);
-                }
-                // 如果当前有选中的文件且在列表中，自动加载
-                else if (currentFile) {
-                    const found = guideList.find(item => item.file === currentFile);
-                    if (found) {
-                        loadFileContent(found.value, found.text);
-                    } else {
-                        currentFile = '';
-                        showPlaceholder('请选择导游词');
-                    }
+                // 自动加载逻辑
+                const targetItem = currentFile 
+                    ? guideList.find(item => item.file === currentFile)
+                    : guideList[0];
+
+                if (targetItem) {
+                    currentFile = targetItem.file;
+                    fileSelector.value = currentFile;
+                    loadFileContent(targetItem.file, targetItem.name);
                 }
             })
             .catch(err => {
                 console.error('加载list.json失败:', err);
                 fileSelector.innerHTML = '<option value="">— 加载失败 —</option>';
-                fileSelector.disabled = false;
                 showError(`无法加载文件列表: ${err.message}`);
+            })
+            .finally(() => {
+                fileSelector.disabled = false;
             });
     }
 
-    // 选择事件
+    // 事件监听
     fileSelector.addEventListener('change', function(e) {
-        const selectedFile = e.target.value; // 文件名
+        const selectedFile = e.target.value;
         if (!selectedFile) {
             currentFile = '';
             showPlaceholder('请选择导游词');
             return;
         }
 
-        // 找到对应的条目
         const selectedItem = guideList.find(item => item.file === selectedFile);
         if (selectedItem) {
             currentFile = selectedItem.file;
             loadFileContent(selectedItem.file, selectedItem.name);
         } else {
-            // 容错：刷新列表
-            loadGuideList();
+            loadGuideList(); // 数据不一致，刷新列表
         }
     });
 
     refreshBtn.addEventListener('click', function() {
         loadGuideList();
-        fileSelector.disable = false;
     });
 
     // 初始化
     loadGuideList();
-
 })();
