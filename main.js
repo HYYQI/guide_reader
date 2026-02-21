@@ -131,8 +131,6 @@
                     items = data;
                 } else if (data.list && Array.isArray(data.list)) {
                     items = data.list;
-                } else if (data.guides && Array.isArray(data.guides)) {
-                    items = data.guides;
                 } else {
                     throw new Error('JSON格式应为数组或包含list/guides字段的对象');
                 }
